@@ -51,20 +51,36 @@ function makeItem(w) {
   const item = document.createElement('div');
   item.className = 'item';
 
-  // iframe：直接使用组件原始尺寸（w.w × w.h），无缩放
+  // 网格占位：宽 140/280/342 → 1/2/3 列；高 74~180 → 1 行，280~285 → 2 行，500~551 → 4 行
+  const cols = w.w <= 150 ? 1 : w.w <= 300 ? 2 : 3;
+  const rows = w.h <= 185 ? 1 : w.h <= 300 ? 2 : 4;
+  item.style.gridColumn = `span ${cols}`;
+  item.style.gridRow = `span ${rows}`;
+
+  // 预览缩放容器：iframe 保持原始尺寸，由 .scaler 等比缩放到格子内
+  const box = document.createElement('div');
+  box.className = 'box';
+  const scaler = document.createElement('div');
+  scaler.className = 'scaler';
+  scaler.style.width = (w.w || 300) + 'px';
+  scaler.style.height = (w.h || 150) + 'px';
+
   const frame = document.createElement('iframe');
   frame.className = 'frame';
   frame.setAttribute('scrolling', 'no');
   frame.setAttribute('loading', 'lazy');   // 懒加载：只加载视口附近的预览，大幅降低启动开销
   frame.style.width = (w.w || 300) + 'px';
   frame.style.height = (w.h || 150) + 'px';
+  scaler.appendChild(frame);
+  box.appendChild(scaler);
   item._frame = frame;
+  item._scaler = scaler;
 
   const name = document.createElement('div');
   name.className = 'name';
   name.textContent = w.name;
 
-  item.append(frame, name);
+  item.append(box, name);
   item.dataset.wid = w.id;
   item.addEventListener('click', () => {
     item.classList.add('pulse');
@@ -87,6 +103,23 @@ function makeItem(w) {
   });
   return item;
 }
+
+// 等比缩放预览到格子内（格子尺寸 = span×148 + gap，留 8px 内边距）
+function fitScaler(item, w) {
+  const { width: iw, height: ih } = item.getBoundingClientRect();
+  if (!iw || !ih) return;
+  const availW = iw - 10, availH = ih - 26;   // 底部留名字空间
+  const s = Math.min(availW / (w.w || 300), availH / (w.h || 150));
+  item._scaler.style.transform = `scale(${Math.max(0.2, s)})`;
+}
+// ResizeObserver：窗口/布局变化时重算缩放
+const ro = typeof ResizeObserver === 'function' ? new ResizeObserver((entries) => {
+  entries.forEach((en) => {
+    const item = en.target;
+    const w = widgets.find((x) => x.id === item.dataset.wid);
+    if (w) fitScaler(item, w);
+  });
+}) : null;
 
 // 清除插入指示线
 function clearInsertIndicator() {
@@ -273,6 +306,8 @@ document.addEventListener('mouseup', () => {
     item.style.animationDelay = `${30 + i * 35}ms`;
     itemCache[w.id] = item;
     grid.appendChild(item);
+    if (ro) ro.observe(item);
+    fitScaler(item, w);
     // loading=lazy：Chromium 自动只加载视口内 iframe，不再一次性加载全部预览
     setTimeout(() => loadFrame(item._frame, w), 60 + i * 90);
   });

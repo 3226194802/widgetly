@@ -76,8 +76,17 @@ function paintUpdate(s) {
     line.textContent = '已是最新版本 ✓';
     updateStatus.appendChild(line);
   } else if (s.state === 'error') {
-    line.textContent = '检查更新失败：' + s.message;
+    // 错误信息友好化：网络类错误给中文提示，原始错误折叠为小字详情
+    const raw = String(s.message || '');
+    const netMsg = /ENOTFOUND|ECONN|ETIMEDOUT|network|socket|connect|ERR_/i.test(raw)
+      ? '无法连接更新服务器（网络问题）'
+      : (/404|not found/i.test(raw) ? '服务器上未找到更新信息' : '检查更新失败');
+    line.textContent = netMsg;
     updateStatus.appendChild(line);
+    const detail = document.createElement('span');
+    detail.style.cssText = 'font-size:10px;color:rgba(29,29,31,0.4);word-break:break-all;';
+    detail.textContent = raw.length > 120 ? raw.slice(0, 120) + '…' : raw;
+    updateStatus.appendChild(detail);
   }
 }
 document.getElementById('btnCheckUpdate').addEventListener('click', () => {

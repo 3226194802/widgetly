@@ -35,7 +35,11 @@ if (!gotSingleLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    // 点击任务栏图标/再次启动：直接聚焦已存在的主界面（不再启动第二个实例导致组件重复）
+    // 用户关闭「启动时打开组件坞」时：再次启动只保持托盘驻留，不弹主界面
+    if (global.__cfg && global.__cfg.openManagerOnStart === false) {
+      try { if (tray) tray.displayBalloon({ title: 'Widgetly 组件坞', content: '已在后台运行，点击托盘图标打开组件坞' }); } catch (_) {}
+      return;
+    }
     if (managerWin && !managerWin.isDestroyed()) {
       if (managerWin.isMinimized()) managerWin.restore();
       managerWin.show();
@@ -814,10 +818,12 @@ app.whenReady().then(async () => {
   await captureWallpaper();      // 窗口未建，截干净壁纸（desktopCapturer 会破坏已建透明窗口，必须先截）
   if (global.__cfg.openManagerOnStart !== false) createManagerWindow();
   createTray();
-  for (const inst of global.__cfg.instances) {
-    createWidgetWindow(inst);
-  }
-  applyPinMode();   // 按配置应用组件层级（固定桌面层开关）
+  // 组件窗口错峰创建：同时创建 21 个渲染进程会引发 CPU 风暴（开机 2 分钟卡顿主因），
+  // 每个间隔 120ms，既平滑 CPU 峰值，又让主界面先出来可交互
+  global.__cfg.instances.forEach((inst, i) => {
+    setTimeout(() => { if (!widgetWins[inst.id]) createWidgetWindow(inst); }, i * 120);
+  });
+  setTimeout(() => applyPinMode(), Math.max(500, global.__cfg.instances.length * 120 + 300));
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createManagerWindow(); });
 });
 

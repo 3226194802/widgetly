@@ -203,11 +203,12 @@ html.dragging .sidebar {
 }
 .grid {
   flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  align-content: flex-start;
-  gap: 8px 9px;
+  display: grid;
+  /* 6 列 × 148px 行高，密集流（dense）：大小卡片混排时自动回填空隙，无大块空白 */
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: 148px;
+  grid-auto-flow: row dense;
+  gap: 8px;
   padding: 6px 12px 8px 6px;
   box-sizing: border-box;
   overflow-x: hidden;
@@ -215,20 +216,19 @@ html.dragging .sidebar {
 }
 .grid::-webkit-scrollbar { width: 0; }
 
-/* 卡片：无外框，组件原始尺寸直接展示；名字悬浮在组件下方 */
+/* 卡片：占据整格，预览缩放居中；名字悬浮在卡片下方 */
 .item {
   position: relative;
-  flex: none;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   cursor: pointer;
   opacity: 0;
+  overflow: hidden;
   animation: itemIn 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.item:hover { transform: scale(1.02); }
+.item:hover { transform: scale(1.03); z-index: 2; }
 .item.dragging { opacity: 0.35; }
 .item.insert-before { box-shadow: -3px 0 0 #0a84ff; }
 .item.insert-after { box-shadow: 3px 0 0 #0a84ff; }
@@ -237,8 +237,15 @@ html.dragging .sidebar {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* 预览缩放容器：按格子尺寸等比缩放 iframe 内容 */
+.box {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.scaler { position: relative; transform-origin: center center; }
 .frame {
-  flex: none;
+  display: block;
   border: none;
   background: transparent;
   pointer-events: none;
@@ -248,10 +255,12 @@ html.dragging .sidebar {
 
 /* 名称（Open Runde，悬浮在组件下方） */
 .name {
-  flex: none;
+  position: absolute;
+  left: 50%; bottom: 6px;
+  transform: translateX(-50%);
   padding: 2px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.82);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   font-family: 'Open Runde', -apple-system, 'PingFang SC', sans-serif;
@@ -261,8 +270,9 @@ html.dragging .sidebar {
   color: rgba(23, 53, 39, 0.85);
   white-space: nowrap;
   transition: background 0.15s ease, color 0.15s ease;
+  z-index: 3;
 }
-.item:hover .name { background: rgba(255, 255, 255, 0.92); color: rgba(23, 53, 39, 0.95); }
+.item:hover .name { background: rgba(255, 255, 255, 0.95); color: rgba(23, 53, 39, 0.95); }
 
 /* 底栏 */
 .footbar {
