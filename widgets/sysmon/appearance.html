@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>外观调节</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 18px;
+    background: linear-gradient(168deg, rgba(36, 40, 50, 0.97), rgba(24, 26, 34, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 32px rgba(0, 0, 0, 0.45);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+    animation: winIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes winIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #f1e8d8; letter-spacing: 0.5px; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #b3a691; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(255, 255, 255, 0.1); }
+  .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .label { font-size: 12px; color: #cfc3b0; flex: none; width: 72px; }
+  .swatches { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  .swatch.def { border: 1.5px dashed rgba(255, 255, 255, 0.4); }
+  .swatch.sel { border: 2.5px solid #f5c95c; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.5) inset; }
+  .picker {
+    width: 28px; height: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: pointer; padding: 0; background: transparent;
+  }
+  .foot { display: flex; justify-content: flex-end; }
+  .done { padding: 6px 20px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.1); color: #f1e8d8; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .done:hover { background: rgba(255, 255, 255, 0.16); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">外观调节</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div class="row">
+      <span class="label">背景颜色</span>
+      <div class="swatches" id="bgSwatches"></div>
+      <input type="color" class="picker" id="bgPicker" title="自定义背景颜色">
+    </div>
+    <div class="row">
+      <span class="label">字体颜色</span>
+      <div class="swatches" id="fontSwatches"></div>
+      <input type="color" class="picker" id="fontPicker" title="自定义字体颜色">
+    </div>
+    <div class="row">
+      <span class="label">进度条颜色</span>
+      <div class="swatches" id="barSwatches"></div>
+      <input type="color" class="picker" id="barPicker" title="自定义进度条颜色">
+    </div>
+    <div class="foot">
+      <button class="done" id="doneBtn">完成</button>
+    </div>
+  </div>
+  <script src="appearance.js"></script>
+</body>
+</html>

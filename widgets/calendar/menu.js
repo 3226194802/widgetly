@@ -1,0 +1,73 @@
+// 日历浮动右键菜单窗口 —— 渲染进程（普通项 / 透明度滑杆行）
+const { ipcRenderer } = require('electron');
+const instId = new URLSearchParams(location.search).get('inst') || 'cal-1';
+const menuEl = document.getElementById('menu');
+let gen = 0;
+let sliderDrag = { on: false, moved: false, startX: 0, rect: null, value: 0 };
+
+ipcRenderer.on('cal:menu-items:' + instId, (_e, data) => {
+  if (!data) return;
+  gen = data.gen || 0;
+  menuEl.innerHTML = '';
+  (data.items || []).forEach((it) => {
+    if (it.kind === 'sep') {
+      const s = document.createElement('div');
+      s.className = 'sep';
+      menuEl.appendChild(s);
+    } else if (it.kind === 'slider') {
+      sliderDrag.value = it.value || 0;
+      const row = document.createElement('div');
+      row.className = 'item slider-row';
+      const label = document.createElement('span');
+      label.textContent = it.label;
+      const track = document.createElement('div');
+      track.className = 'slider-track';
+      const fill = document.createElement('div');
+      fill.className = 'slider-fill';
+      const thumb = document.createElement('div');
+      thumb.className = 'slider-thumb';
+      const val = document.createElement('span');
+      val.className = 'slider-val';
+      track.append(fill, thumb);
+      row.append(label, track, val);
+      const paint = () => { fill.style.width = sliderDrag.value + '%'; thumb.style.left = sliderDrag.value + '%'; val.textContent = sliderDrag.value + '%'; };
+      paint();
+      const setFromX = (x) => {
+        const r = sliderDrag.rect;
+        if (!r || !r.width) return;
+        sliderDrag.value = Math.max(0, Math.min(100, Math.round((x - r.left) / r.width * 100)));
+        paint();
+        ipcRenderer.send('cal:menu-slide:' + instId, { gen, v: sliderDrag.value, done: false });
+      };
+      row.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        sliderDrag = { on: true, moved: false, startX: e.clientX, rect: track.getBoundingClientRect(), value: sliderDrag.value };
+        setFromX(e.clientX);
+      });
+      document.addEventListener('mousemove', (e) => {
+        if (!sliderDrag.on) return;
+        if (!sliderDrag.moved && Math.abs(e.clientX - sliderDrag.startX) > 4) sliderDrag.moved = true;
+        if (sliderDrag.moved) setFromX(e.clientX);
+      });
+      document.addEventListener('mouseup', () => {
+        if (!sliderDrag.on) return;
+        sliderDrag.on = false;
+        if (sliderDrag.moved) ipcRenderer.send('cal:menu-slide:' + instId, { gen, v: sliderDrag.value, done: true });
+      });
+      menuEl.appendChild(row);
+    } else {
+      const el = document.createElement('div');
+      el.className = 'item' + (it.danger ? ' danger' : '');
+      const label = document.createElement('span');
+      label.textContent = it.label;
+      el.appendChild(label);
+      el.addEventListener('click', () => ipcRenderer.send('cal:menu-click:' + instId, { gen, action: it.action, payload: it.payload }));
+      menuEl.appendChild(el);
+    }
+  });
+  ipcRenderer.send('cal:menu-ready:' + instId, { gen, w: menuEl.offsetWidth, h: menuEl.offsetHeight });
+});
+document.addEventListener('mousedown', (e) => {
+  if (!e.target.closest || !e.target.closest('.item')) ipcRenderer.send('cal:menu-close:' + instId);
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') ipcRenderer.send('cal:menu-close:' + instId); });

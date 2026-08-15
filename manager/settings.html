@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>设置</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win { position: absolute; inset: 8px; border-radius: 16px; background: rgba(252,252,253,0.97); border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 12px 32px rgba(0,0,0,0.28); padding: 16px; display: flex; flex-direction: column; gap: 14px; animation: winIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes winIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #1d1d1f; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(0,0,0,0.08); }
+  .group { display: flex; flex-direction: column; gap: 10px; }
+  .opt-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .opt-label { font-size: 13px; font-weight: 700; color: #1d1d1f; white-space: nowrap; }
+  .opt-sub { font-size: 11px; color: rgba(29,29,31,0.55); margin-top: 2px; line-height: 1.5; }
+  .toggle { position: relative; width: 46px; height: 26px; border-radius: 13px; background: rgba(0,0,0,0.15); cursor: pointer; transition: background 0.2s ease; flex: none; }
+  .toggle.on { background: #34c759; }
+  .toggle .knob { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.3); transition: left 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+  .toggle.on .knob { left: 22px; }
+  .sep { height: 1px; background: rgba(0,0,0,0.07); }
+  .section-title { font-size: 12px; font-weight: 800; color: rgba(29,29,31,0.55); }
+  .donate-btn {
+    width: 100%; padding: 9px 0; border: none; border-radius: 10px;
+    background: linear-gradient(135deg, #12b886, #0a8f6a); color: #fff;
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+    box-shadow: 0 3px 10px rgba(10, 143, 106, 0.3);
+  }
+  .donate-btn:hover { opacity: 0.92; }
+  .contact-row { display: flex; align-items: center; gap: 8px; }
+  .contact-label { font-size: 12px; color: rgba(29,29,31,0.55); flex: none; width: 40px; }
+  .contact-val { flex: 1; font-size: 13px; font-weight: 700; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+  .copy-btn { flex: none; padding: 4px 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 7px; background: transparent; color: #0a84ff; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .copy-btn:hover { background: rgba(10, 132, 255, 0.08); }
+  .copy-btn.done { color: #0a8f6a; border-color: rgba(10,143,106,0.4); }
+  .foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: rgba(29,29,31,0.45); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">设置</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+
+    <div class="group">
+      <div class="opt-row">
+        <div>
+          <div class="opt-label">开机自启动</div>
+          <div class="opt-sub">登录 Windows 后自动在后台运行组件</div>
+        </div>
+        <div class="toggle" id="tgAutostart"><div class="knob"></div></div>
+      </div>
+
+      <div class="opt-row">
+        <div style="flex:1;">
+          <div class="opt-label">开机自启方式</div>
+          <div class="opt-sub">按启动速度从快到慢排列</div>
+        </div>
+        <select id="selAutostartMethod" style="flex:none;padding:6px 8px;border:1px solid rgba(0,0,0,0.14);border-radius:8px;font-size:12px;background:#fff;color:#1d1d1f;font-family:inherit;">
+          <option value="registry">注册表（最快）</option>
+          <option value="startup">启动文件夹（标准）</option>
+          <option value="scheduler">计划任务（登录时）</option>
+        </select>
+      </div>
+
+      <div class="opt-row">
+        <div>
+          <div class="opt-label">启动时打开组件坞</div>
+          <div class="opt-sub">关闭后仅驻留系统托盘，不弹组件坞窗口</div>
+        </div>
+        <div class="toggle" id="tgOpenManager"><div class="knob"></div></div>
+      </div>
+
+      <div class="opt-row">
+        <div>
+          <div class="opt-label">固定所有组件层级</div>
+          <div class="opt-sub">开启后组件挂载桌面层，Win+D / 三指下滑不隐藏（暂不可拖动/右键）</div>
+        </div>
+        <div class="toggle" id="tgPin"><div class="knob"></div></div>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="group">
+      <div class="section-title">更新</div>
+      <div class="contact-row">
+        <span class="contact-val" id="verText" style="flex:1;">当前版本 v0.2.0</span>
+        <button class="copy-btn" id="btnCheckUpdate" style="color:#0a8f6a;">检查更新</button>
+      </div>
+      <div class="update-status" id="updateStatus" style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(29,29,31,0.65);"></div>
+      <button class="donate-btn" id="btnDownloadPage" style="margin-top:4px;">🌐 打开下载页（浏览器手动下载）</button>
+    </div>
+
+    <div class="sep"></div>
+    <div class="group">
+      <div class="section-title">支持与联系</div>
+      <button class="donate-btn" id="btnDonate">❤ 捐助支持</button>
+      <div class="contact-row">
+        <span class="contact-label">QQ群</span>
+        <span class="contact-val" id="qqGroupVal">1094843262</span>
+        <button class="copy-btn" data-copy="qqGroupVal">复制</button>
+      </div>
+      <div class="contact-row">
+        <span class="contact-label">QQ号</span>
+        <span class="contact-val" id="qqNumVal">3226194802</span>
+        <button class="copy-btn" data-copy="qqNumVal">复制</button>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="foot">
+      <span>Widgetly 组件坞</span>
+      <span id="ver">v0.2.0</span>
+    </div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

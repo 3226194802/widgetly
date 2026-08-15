@@ -1,0 +1,279 @@
+/* ===== 番茄时钟组件 —— 方形悬浮窗 + 壁纸毛玻璃半透明底 =====
+   专注=番茄红 / 休息=青绿；默认只显示事项，整行悬停浮现 ▶ 计时按钮 */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../clock/Montserrat-Variable.ttf') format('truetype'); }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+/* 保证 hidden 属性生效：作者的 display:flex 会覆盖 UA 的 [hidden]{display:none}，需显式声明 */
+[hidden] { display: none !important; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 主题变量（跟随系统明暗） ---------- */
+:root {
+  --focus-a: #ff6b52; --focus-b: #e8432e;      /* 专注：番茄红 */
+  --break-a: #41cfc4; --break-b: #1fa89b;      /* 休息：青绿 */
+  --ring-a: var(--focus-a); --ring-b: var(--focus-b);
+  --veil: linear-gradient(168deg, #fffbf6, #f8f1e7);
+  --card-bg: rgba(255, 255, 255, 0.10);
+  --card-bg-hi: rgba(255, 255, 255, 0.18);
+  --line: rgba(255, 255, 255, 0.22);
+  --text-1: #3a2b23; --text-2: rgba(58, 43, 35, 0.62); --text-3: rgba(58, 43, 35, 0.45);
+  --num-font: 'Montserrat', -apple-system, "PingFang SC", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --veil: linear-gradient(168deg, #26201c, #1c1815);
+    --card-bg: rgba(255, 255, 255, 0.07);
+    --card-bg-hi: rgba(255, 255, 255, 0.14);
+    --line: rgba(255, 255, 255, 0.14);
+    --text-1: #f2ece2; --text-2: rgba(242, 236, 226, 0.66); --text-3: rgba(242, 236, 226, 0.46);
+  }
+}
+body[data-phase="break"] { --ring-a: var(--break-a); --ring-b: var(--break-b); }
+
+/* ---------- 主卡：透明窗口 + backdrop-filter 实时毛玻璃（与日历同款），圆角纯 CSS 保证与日历一致 ---------- */
+#card {
+  position: absolute; inset: 0;
+  border-radius: 30px;   /* 与日历大号一致 */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+}
+/* 暖色罩层：压在实时毛玻璃之上，透明度由滑块控制（0% = 纯色，100% = 全透明） */
+.veil {
+  position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit;
+  background: var(--veil);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+  opacity: 0.55;   /* 由背景透明度滑块控制 */
+  transition: opacity 0.25s ease;
+}
+#card > *:not(.veil) { position: relative; z-index: 2; }
+
+/* ---------- 顶栏 ---------- */
+#titlebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px 8px;
+  cursor: grab;
+  flex: none;
+}
+#titlebar:active { cursor: grabbing; }
+.tb-left { display: flex; align-items: center; gap: 7px; }
+.logo { font-size: 15px; filter: drop-shadow(0 1px 4px rgba(232, 67, 46, 0.4)); }
+.app-name { font-size: 12px; font-weight: 700; letter-spacing: 1.6px; color: var(--text-1); }
+.tb-right { display: flex; align-items: center; }
+.today-badge {
+  font-size: 10px; font-weight: 600;
+  color: var(--focus-a);
+  background: color-mix(in srgb, var(--focus-a) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--focus-a) 32%, transparent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 列表视图 ---------- */
+#listView { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 2px 12px 0; }
+#taskList { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px 2px 4px; }
+#taskList::-webkit-scrollbar { width: 3px; }
+#taskList::-webkit-scrollbar-thumb { background: var(--line); border-radius: 2px; }
+#taskList::-webkit-scrollbar-track { background: transparent; }
+
+.row {
+  position: relative;
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px;
+  border-radius: 13px;
+  background: var(--card-bg);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.row:hover { background: var(--card-bg-hi); }
+.row.sel { border-color: color-mix(in srgb, var(--ring-a) 45%, transparent); background: color-mix(in srgb, var(--ring-a) 10%, var(--card-bg)); }
+.ck {
+  width: 17px; height: 17px; flex: none;
+  border-radius: 50%;
+  border: 1.6px solid var(--text-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: transparent;
+  transition: all 0.18s ease;
+}
+.row.done .ck { background: var(--ring-a); border-color: var(--ring-a); color: #fff; }
+.txt {
+  flex: 1; min-width: 0;
+  font-size: 12px; font-weight: 500; color: var(--text-1);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.row.done .txt { color: var(--text-3); text-decoration: line-through; }
+.cnt {
+  flex: none; font-size: 10.5px; color: var(--ring-a);
+  font-variant-numeric: tabular-nums; font-weight: 600;
+}
+/* 悬停浮现的 ▶ 计时按钮（未计时时保持中性，不显示番茄圈） */
+.play {
+  position: absolute; right: 8px; top: 50%;
+  width: 27px; height: 27px; margin-top: -13.5px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  background: var(--card-bg-hi);
+  color: var(--text-1);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: scale(0.8);
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.15s ease;
+}
+.play svg { width: 12px; height: 12px; }
+.row:hover .play { opacity: 1; transform: scale(1); }
+.play:hover { background: color-mix(in srgb, var(--ring-a) 22%, var(--card-bg-hi)); }
+/* 悬停时文本让位给按钮 */
+.row:hover .cnt { visibility: hidden; }
+.empty {
+  font-size: 11px; color: var(--text-3);
+  text-align: center; padding: 26px 10px; letter-spacing: 0.4px;
+}
+
+/* ---------- 底部 ---------- */
+#footer {
+  flex: none;
+  padding: 8px 16px 12px;
+  font-size: 9.5px; color: var(--text-3); text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* ---------- 计时视图 ---------- */
+#timerView {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 4px 16px 14px;
+}
+.ringwrap { position: relative; width: 168px; height: 168px; margin-top: 2px; }
+.ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ring-bg { fill: none; stroke: var(--line); stroke-width: 6; }
+.ring-fg {
+  fill: none; stroke: url(#ringGrad); stroke-width: 6;
+  stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: 50% 50%;
+  transition: stroke-dashoffset 0.4s linear, stroke 0.4s ease;
+}
+.ring-glow {
+  position: absolute; left: 50%; top: 50%;
+  width: 130px; height: 130px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ring-a) 22%, transparent) 0%, transparent 62%);
+  pointer-events: none;
+}
+.digits {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--num-font);
+  font-size: 31px; font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+.task-name {
+  margin-top: 8px;
+  font-size: 13px; font-weight: 600; color: var(--text-1);
+  max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.round-info { margin-top: 3px; font-size: 10px; color: var(--text-2); letter-spacing: 0.4px; }
+.ctrl { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.cbtn {
+  width: 46px; height: 46px;   /* 与暂停/开始按钮同尺寸 */
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card-bg);
+  color: var(--text-1);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.cbtn svg { width: 20px; height: 20px; }
+.cbtn:hover { background: var(--card-bg-hi); }
+.cbtn:active { transform: scale(0.92); }
+#btnPause {
+  width: 46px; height: 46px;
+  border: none;
+  background: linear-gradient(135deg, var(--ring-a), var(--ring-b));
+  color: #fff;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ring-a) 40%, transparent);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
+}
+/* 暂停/未运行时：按钮转中性（番茄色只在计时运行中出现） */
+body[data-running="0"] #btnPause {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  color: var(--text-1);
+  box-shadow: none;
+}
+body[data-running="0"] #btnPause:hover { background: var(--card-bg-hi); }
+/* 暂停时圆环与数字变暗，状态更清晰 */
+body[data-running="0"] .ring-fg { opacity: 0.55; }
+body[data-running="0"] .ring-glow { opacity: 0.45; }
+body[data-running="0"] .digits { opacity: 0.75; }
+#btnPause svg { width: 20px; height: 20px; }
+
+/* ---------- 背景透明度弹出面板 ---------- */
+#opPanel {
+  position: absolute;
+  left: 16px; right: 16px; bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text-1) 8%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+#opPanel[hidden] { display: none; }
+.op-label { font-size: 11.5px; font-weight: 600; color: var(--text-1); flex: none; }
+.op-controls { flex: 1; display: flex; align-items: center; gap: 8px; }
+.op-val {
+  width: 40px; flex: none; text-align: right;
+  font-size: 11.5px; font-weight: 600; color: var(--ring-a);
+  font-variant-numeric: tabular-nums;
+}
+.op-slider {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 14px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--text-1) 14%, transparent);
+  cursor: pointer;
+}
+.op-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 55%;
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--ring-b), var(--ring-a));
+}
+.op-thumb {
+  position: absolute; top: 50%; left: 55%;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: var(--text-1);
+  border: 1px solid color-mix(in srgb, var(--text-1) 30%, transparent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35), 0 0 0 3px color-mix(in srgb, var(--ring-a) 16%, transparent);
+  transition: box-shadow 0.15s ease;
+}
+.op-slider:active .op-thumb {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45), 0 0 0 7px color-mix(in srgb, var(--ring-a) 20%, transparent);
+}

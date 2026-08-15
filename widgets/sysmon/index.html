@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>系统监测</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="head">
+      <span class="title">🖥 系统监测</span>
+      <span class="gear" id="btnSettings" title="选择监测对象">⚙</span>
+    </div>
+    <div class="slots" id="slots"></div>
+
+    <!-- 背景透明度面板（右键菜单唤出，拖动自绘滑杆） -->
+    <div class="op-panel" id="opPanel" hidden>
+      <span class="op-label">背景透明度</span>
+      <div class="op-slider" id="opSlider">
+        <div class="op-fill" id="opFill"></div>
+        <div class="op-thumb" id="opThumb"></div>
+      </div>
+      <span class="op-val" id="opVal">0%</span>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

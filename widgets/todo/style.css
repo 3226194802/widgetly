@@ -1,0 +1,77 @@
+/* 今日待办组件 —— 实时毛玻璃背景 + 彩色纽扣勾选框 + 浮动右键菜单（独立窗口） */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+.card {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);   /* 只内阴影：外阴影在透明窗口上会被矩形窗口裁成方形 */
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+}
+.veil {
+  position: absolute; inset: 0; z-index: 0;
+  border-radius: inherit;
+  background: #ffffff;
+  opacity: 0.7;
+}
+.content {
+  position: relative; z-index: 2;
+  height: 100%;
+  padding: 10px 12px 8px;
+  display: flex; flex-direction: column;
+}
+.title { flex: none; font-weight: 800; letter-spacing: 0.5px; color: #1e2832; }
+.list {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  margin-top: 6px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.list::-webkit-scrollbar { width: 0; }
+.todo-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.todo-row:hover { background: rgba(0, 0, 0, 0.05); }
+.check {
+  position: relative;
+  width: 20px; height: 20px; flex: none;
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--glow, rgba(0, 0, 0, 0.2));
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.check::after {
+  content: '';
+  position: absolute; left: 50%; top: 50%;
+  width: 13px; height: 13px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(128, 128, 128, 0.8);
+}
+.todo-row.done .check::after {
+  content: '✓';
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  color: #444;
+  font-size: 10px; font-weight: 700;
+  line-height: 1;
+}
+.todo-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-row.done .todo-text { text-decoration: line-through; opacity: 0.5; }
+.add { flex: none; margin-top: 6px; padding: 4px 6px; cursor: pointer; border-radius: 8px; color: rgba(20, 120, 220, 0.9); }
+.add:hover { background: rgba(10, 132, 255, 0.1); }
+.add-input {
+  flex: none; margin-top: 4px; padding: 5px 8px;
+  border: 1px solid rgba(10, 132, 255, 0.5); border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92); outline: none; font-family: inherit;
+}

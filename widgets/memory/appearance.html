@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>外观调节</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 18px;
+    background: linear-gradient(168deg, rgba(30, 26, 40, 0.97), rgba(18, 16, 26, 0.98));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 12px 32px rgba(0, 0, 0, 0.45);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 13px;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #f2eee6; letter-spacing: 0.5px; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #a99fb0; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(255, 255, 255, 0.1); }
+  .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .label { font-size: 12px; color: #cfc4d0; flex: none; width: 66px; }
+  .swatches { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+  .swatch.sel { border: 2px solid #ffd24a; }
+  .picker { width: 28px; height: 22px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; cursor: pointer; padding: 0; background: transparent; }
+  .modes { flex: 1; display: flex; gap: 6px; }
+  .mode {
+    flex: 1; padding: 5px 0; text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 7px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #e5dce0; font-size: 11.5px; cursor: pointer; font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .mode:hover { background: rgba(255, 255, 255, 0.12); }
+  .mode.sel { border-color: #a07fff; background: rgba(160, 127, 255, 0.18); color: #c9b8ff; font-weight: 600; }
+  .foot { display: flex; justify-content: flex-end; }
+  .done { padding: 6px 20px; border: none; border-radius: 8px; background: rgba(255, 255, 255, 0.1); color: #f2eee6; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .done:hover { background: rgba(255, 255, 255, 0.16); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">外观调节</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div class="row">
+      <span class="label">曲线颜色</span>
+      <div class="swatches" id="curveSwatches"></div>
+      <input type="color" class="picker" id="curvePicker" title="自定义曲线颜色">
+    </div>
+    <div class="row">
+      <span class="label">进度条颜色</span>
+      <div class="swatches" id="barSwatches"></div>
+      <input type="color" class="picker" id="barPicker" title="自定义进度条颜色">
+    </div>
+    <div class="row">
+      <span class="label">字体颜色</span>
+      <div class="swatches" id="fontSwatches"></div>
+      <input type="color" class="picker" id="fontPicker" title="自定义字体颜色">
+    </div>
+    <div class="row">
+      <span class="label">背景</span>
+      <div class="modes" id="bgModes"></div>
+    </div>
+    <div class="row">
+      <span class="label">背景颜色</span>
+      <div class="swatches" id="bgSwatches"></div>
+      <input type="color" class="picker" id="bgPicker" title="自定义背景颜色">
+    </div>
+    <div class="foot">
+      <button class="done" id="doneBtn">完成</button>
+    </div>
+  </div>
+  <script src="appearance.js"></script>
+</body>
+</html>

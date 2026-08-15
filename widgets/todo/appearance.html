@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>外观设置</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #1d1d1f; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(0, 0, 0, 0.08); }
+  .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .label { font-size: 12px; color: #3a3a3c; flex: none; width: 58px; }
+  .slider {
+    position: relative; flex: 1; height: 14px;
+    border-radius: 7px; background: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 30%; border-radius: 7px; background: #0a84ff; }
+  .thumb { position: absolute; top: 50%; left: 30%; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; border-radius: 50%; background: #fff; border: 1px solid rgba(0, 0, 0, 0.12); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+  .val { font-size: 10px; color: #0a84ff; flex: none; width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+  .swatches { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  }
+  .swatch.sel { border: 2px solid #0a84ff; }
+  .picker {
+    width: 28px; height: 22px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    cursor: pointer; padding: 0; background: #fff;
+  }
+  .sizes { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; }
+  .size {
+    padding: 4px 0; width: 44px; text-align: center;
+    border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 7px;
+    background: #fff; font-size: 12px; cursor: pointer; font-family: inherit; color: #333;
+  }
+  .size.sel { border-color: #0a84ff; background: rgba(10, 132, 255, 0.1); color: #0a84ff; }
+  .foot { display: flex; justify-content: flex-end; }
+  .done { padding: 6px 20px; border: none; border-radius: 8px; background: rgba(0, 0, 0, 0.08); color: #1d1d1f; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .done:hover { background: rgba(0, 0, 0, 0.14); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">外观设置</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div class="row">
+      <span class="label">背景透明度</span>
+      <div class="slider" id="opTrack">
+        <div class="fill" id="opFill"></div>
+        <div class="thumb" id="opThumb"></div>
+      </div>
+      <span class="val" id="opVal">30%</span>
+    </div>
+    <div class="row">
+      <span class="label">背景颜色</span>
+      <div class="swatches" id="bgSwatches"></div>
+      <input type="color" class="picker" id="bgPicker" title="自定义背景色">
+    </div>
+    <div class="row">
+      <span class="label">字体颜色</span>
+      <div class="swatches" id="fontSwatches"></div>
+      <input type="color" class="picker" id="fontPicker" title="自定义字体颜色">
+    </div>
+    <div class="row">
+      <span class="label">字号</span>
+      <div class="sizes" id="fontSizes"></div>
+    </div>
+    <div class="foot">
+      <button class="done" id="doneBtn">完成</button>
+    </div>
+  </div>
+  <script src="appearance.js"></script>
+</body>
+</html>

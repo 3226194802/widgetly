@@ -1,0 +1,122 @@
+/* DSH 一键启动器 —— 极简宁静双主题（A 玻璃拟态 / B 深色极光）+ 光环电源键
+   设计语言：浅色 = 简约美观（干净白玻璃、柔和蓝）；深色 = 高级沉静（深夜蓝、克制极光） */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../clock/Montserrat-Variable.ttf') format('truetype'); }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+
+/* ---------- 主题变量 ---------- */
+:root {
+  --bg-grad-1: #ffffff; --bg-grad-2: #eef2f7;           /* A 白玻璃 */
+  --glass: rgba(255,255,255,0.5);
+  --core-bg: rgba(255,255,255,0.88);
+  --core-shadow: 0 10px 22px rgba(15,35,70,0.12), inset 0 1px 0 rgba(255,255,255,0.9);
+  --text: #1c2330; --text-dim: rgba(28,35,48,0.42);
+  --ring-a: #7ab8ff; --ring-b: #2f7bff; --ring-c: #a8d4ff;   /* 单色系柔和蓝 */
+  --ring-glow: rgba(47,123,255,0.30);
+  --glow: rgba(86,146,255,0.20);
+  --dot-idle: #b3bcc8; --dot-start: #f0a63a; --dot-run: #2ec97b; --dot-fail: #ef4e3d;
+}
+body[data-theme="dark"] {
+  --bg-grad-1: #141927; --bg-grad-2: #0a0d17;           /* B 深夜蓝 */
+  --glass: rgba(255,255,255,0.05);
+  --core-bg: rgba(16,20,34,0.86);
+  --core-shadow: 0 12px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.10);
+  --text: #e8ebf3; --text-dim: rgba(232,235,243,0.56);
+  --ring-a: #67e3d0; --ring-b: #3b82f6; --ring-c: #8fb7ff;   /* 青→蓝，克制极光 */
+  --ring-glow: rgba(103,227,208,0.32);
+  --glow: rgba(88,150,255,0.15);
+  --dot-idle: #59637a; --dot-start: #f0a63a; --dot-run: #34d399; --dot-fail: #f87171;
+}
+
+.card {
+  position: absolute; inset: 0; border-radius: 22px;
+  border: 1px solid var(--glass);
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+  box-shadow: inset 0 1px 0 var(--glass);
+}
+.glass { display: none; }
+.bg {
+  position: absolute; inset: 0; opacity: var(--veil-opacity, 1);
+  background:
+    radial-gradient(ellipse 95% 70% at 50% 0%, rgba(255,255,255,0.7) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 55% at 50% 112%, rgba(96,150,255,0.10) 0%, transparent 62%),
+    linear-gradient(160deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+}
+body[data-theme="dark"] .bg {
+  background:
+    radial-gradient(ellipse 90% 80% at 50% -5%, rgba(88,140,255,0.16) 0%, transparent 58%),
+    radial-gradient(ellipse 130% 80% at 50% 118%, rgba(45,212,191,0.09) 0%, transparent 55%),
+    linear-gradient(165deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+}
+.content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px 10px; }
+
+/* 品牌字标：小号大写字距 */
+.brand {
+  position: absolute; top: 11px; left: 15px;
+  font-family: 'Montserrat', sans-serif; font-weight: 700;
+  font-size: 7.5px; letter-spacing: 1.6px; text-transform: uppercase;
+  color: var(--text-dim); white-space: nowrap;
+}
+
+/* ---------- 光环电源键：柔光底层 + 玻璃圆 + 渐变光环 + 内核 ---------- */
+.btn { position: relative; width: 58px; height: 58px; cursor: pointer; border-radius: 50%; transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), width 0.25s ease, height 0.25s ease; }
+.btn:hover { transform: scale(1.05); }
+.btn:active { transform: scale(0.94); }
+/* 柔光底层（层次光效：底层大柔光） */
+.glow {
+  position: absolute; left: 50%; top: 50%; width: 170%; height: 170%;
+  transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(circle, var(--glow) 0%, transparent 62%);
+  opacity: 0.8; transition: opacity 0.4s ease;
+}
+/* 外层玻璃圆 */
+.btn::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--glass); box-shadow: 0 8px 20px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.4); }
+/* 渐变光环（同色系柔和过渡，细环） */
+.ring {
+  position: absolute; inset: 8%; border-radius: 50%;
+  background: conic-gradient(from 215deg, var(--ring-a), var(--ring-b) 55%, var(--ring-c) 82%, var(--ring-a));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 16%), #000 calc(100% - 11%));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 16%), #000 calc(100% - 11%));
+  transition: filter 0.4s ease;
+}
+/* 内核 */
+.core { position: absolute; inset: 19%; border-radius: 50%; background: var(--core-bg); box-shadow: var(--core-shadow); display: flex; align-items: center; justify-content: center; }
+.icon { color: var(--text); display: flex; align-items: center; justify-content: center; width: 17px; height: 17px; }
+.icon svg { width: 100%; height: 100%; }
+.icon .spin { animation: spinIcon 1s linear infinite; }
+@keyframes spinIcon { to { transform: rotate(360deg); } }
+
+/* ---------- 状态：光环动效 + 呼吸点 ---------- */
+.btn.starting .ring { animation: spin 1.1s linear infinite; }
+.btn.running .ring { animation: breathe 2.4s ease-in-out infinite; }
+.btn.running .glow { opacity: 1; animation: breatheGlow 2.4s ease-in-out infinite; }
+.btn.failed .ring { background: conic-gradient(from 215deg, #ff9a8d, #ef4e3d 55%, #ffbfb3); filter: drop-shadow(0 0 10px rgba(239,78,61,0.5)); }
+.btn.failed .glow { background: radial-gradient(circle, rgba(239,78,61,0.20) 0%, transparent 62%); opacity: 1; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%, 100% { filter: drop-shadow(0 0 5px var(--ring-glow)); } 50% { filter: drop-shadow(0 0 15px var(--ring-glow)); } }
+@keyframes breatheGlow { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+.status { display: flex; align-items: center; gap: 6px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--dot-idle); transition: background 0.3s ease; }
+body[data-state="starting"] .dot { background: var(--dot-start); animation: dotPulse 1s ease-in-out infinite; }
+body[data-state="running"] .dot { background: var(--dot-run); box-shadow: 0 0 6px var(--dot-run); }
+body[data-state="failed"] .dot { background: var(--dot-fail); }
+@keyframes dotPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.status-text { font-size: 10px; font-weight: 600; color: var(--text); letter-spacing: 0.2px; }
+.detail { font-size: 9px; color: var(--text-dim); text-align: center; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* ---------- 小号：只显示圆钮 ---------- */
+body[data-size="small"] .brand { display: none; }
+body[data-size="small"] .status { display: none; }
+body[data-size="small"] .btn { width: 40px; height: 40px; }
+body[data-size="small"] .icon { width: 12px; height: 12px; }
+/* 大号：舒展布局 + 详情 */
+body[data-size="large"] .content { gap: 13px; }
+body[data-size="large"] .brand { font-size: 12px; letter-spacing: 2.4px; top: 22px; left: 26px; }
+body[data-size="large"] .btn { width: 108px; height: 108px; }
+body[data-size="large"] .icon { width: 44px; height: 44px; }
+body[data-size="large"] .detail { display: block; font-size: 11px; max-width: 240px; }
+body[data-size="large"] .status-text { font-size: 12.5px; }
+body[data-size="large"] .dot { width: 6px; height: 6px; }

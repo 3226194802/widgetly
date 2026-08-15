@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>日历·全景</title>
+<link rel="stylesheet" href="xl.css">
+</head>
+<body data-style="xl">
+  <div class="card" id="card">
+    <div class="glass" id="glass"></div>
+    <div class="bg"></div>
+    <div class="content">
+      <div class="top">
+        <div class="day-halo"></div>
+        <div class="day" id="xDay">14</div>
+        <div class="meta" id="xMeta">2026年8月14日 · 周五 · 农历七月十四</div>
+      </div>
+      <div class="dow-row"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+      <div class="grid" id="xGrid"></div>
+      <div class="terms" id="xTerms"></div>
+      <div class="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" id="xProg"></div><div class="prog-dot"></div></div>
+        <span class="prog-label">今日进度</span>
+      </div>
+    </div>
+  </div>
+  <script src="lunar-lib.js"></script>
+  <script src="lunar.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

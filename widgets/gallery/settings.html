@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>图库设置</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 15px; font-weight: 700; color: #1d1d1f; }
+  .close { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #888; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(0, 0, 0, 0.08); color: #333; }
+  .btn { padding: 9px 12px; border: none; border-radius: 10px; background: #0a84ff; color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .btn:hover { background: #0a74e6; }
+  .folder { font-size: 12px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: rgba(0, 0, 0, 0.04); border-radius: 8px; padding: 8px 10px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .label { font-size: 13px; color: #3a3a3c; flex: none; }
+  select { flex: 1; padding: 7px 8px; border: 1px solid rgba(0, 0, 0, 0.14); border-radius: 9px; font-size: 13px; background: #fff; color: #1d1d1f; font-family: inherit; }
+  .radio { display: flex; align-items: center; gap: 4px; font-size: 13px; color: #3a3a3c; cursor: pointer; }
+  .foot { display: flex; justify-content: flex-end; }
+  .done { padding: 8px 22px; border: none; border-radius: 10px; background: rgba(0, 0, 0, 0.08); color: #1d1d1f; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .done:hover { background: rgba(0, 0, 0, 0.14); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">图库设置</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <button class="btn" id="folderBtn">选择图库文件夹…</button>
+    <div class="folder" id="folderLabel">未选择文件夹</div>
+    <div class="row">
+      <span class="label">轮播时长</span>
+      <select id="durationSelect">
+        <option value="3">3 秒</option>
+        <option value="5">5 秒</option>
+        <option value="8">8 秒</option>
+        <option value="10">10 秒</option>
+        <option value="15">15 秒</option>
+        <option value="30">30 秒</option>
+        <option value="60">60 秒</option>
+      </select>
+    </div>
+    <div class="row">
+      <span class="label">播放顺序</span>
+      <label class="radio"><input type="radio" name="order" id="orderRandom"> 随机</label>
+      <label class="radio"><input type="radio" name="order" id="orderSeq"> 顺序</label>
+    </div>
+    <div class="foot">
+      <button class="done" id="doneBtn">完成</button>
+    </div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

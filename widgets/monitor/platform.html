@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>切换 Agent 平台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 18px;
+    background: linear-gradient(168deg, rgba(34, 26, 22, 0.97), rgba(22, 17, 14, 0.98));
+    border: 1px solid rgba(255, 240, 220, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 12px 32px rgba(0, 0, 0, 0.45);
+    padding: 13px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #f1e8d8; letter-spacing: 0.5px; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #b3a691; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(255, 255, 255, 0.1); }
+  .hint { font-size: 10px; color: rgba(179, 166, 145, 0.6); letter-spacing: 0.4px; }
+  #list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
+  #list::-webkit-scrollbar { width: 3px; }
+  #list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 2px; }
+  .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 12px;
+    background: rgba(255, 246, 235, 0.05);
+    border: 1px solid rgba(255, 236, 214, 0.09);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .row:hover { background: rgba(255, 246, 235, 0.10); }
+  .row.active { border-color: rgba(240, 168, 58, 0.55); background: rgba(240, 168, 58, 0.10); }
+  .row .ico { width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .row .mid { flex: 1; min-width: 0; }
+  .row .nm { font-size: 12.5px; font-weight: 700; color: #f1e8d8; }
+  .row .dt { font-size: 9.5px; color: rgba(179, 166, 145, 0.6); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .st { flex: none; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .row .st.ok { color: #41cf7f; background: rgba(65, 207, 127, 0.12); border: 1px solid rgba(65, 207, 127, 0.3); }
+  .row .st.no { color: #b3a691; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 236, 214, 0.12); }
+  .row .st.cur { color: #f0a83a; background: rgba(240, 168, 58, 0.12); border: 1px solid rgba(240, 168, 58, 0.35); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">切换 Agent 平台</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div class="hint">选择后自动检测并读取本地用量数据；未安装的平台会提示「未找到此软件」</div>
+    <div id="list"><!-- JS 填充 --></div>
+  </div>
+  <script src="platform.js"></script>
+</body>
+</html>

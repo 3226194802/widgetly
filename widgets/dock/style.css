@@ -1,0 +1,148 @@
+/* ===== 文件夹（快捷收纳）组件 —— iOS 毛玻璃风格 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+html, body {
+  background: transparent;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: #1d1d1f;
+  -webkit-font-smoothing: antialiased;
+}
+
+#card {
+  --bg-a: 0.92;   /* 毛玻璃白罩不透明度（可调，映射到 .veil） */
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 8px 16px 8px;
+  border-radius: 22px;
+  background: transparent; /* 背景由实时 backdrop-filter 模糊 + veil 白罩构成 */
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow:
+    inset 0 0 26px rgba(185, 220, 255, 0.13),
+    inset 0 0 6px rgba(255, 255, 255, 0.14);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* 不透明白罩（0%透明度=纯白，100%=全透明） */
+.veil {
+  position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse 90% 70% at 88% 96%, rgba(255,190,110,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 6% 4%, rgba(255,255,255,0.5) 0%, transparent 55%),
+    linear-gradient(160deg, #ffffff 0%, #e8ebef 100%);
+  opacity: var(--bg-a);
+}
+#titlebar, #grid, #opPanel { position: relative; z-index: 2; }
+#card { justify-content: center; }
+#titlebar { position: absolute; top: 0; left: 0; right: 0; }
+#card.drag-over { border-color: rgba(10, 132, 255, 0.7); }
+
+/* 标题栏（占位 14px；整卡自定义拖动） */
+#titlebar { height: 14px; flex: none; }
+
+/* 网格 */
+#grid {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 6px 8px;
+}
+@keyframes slideDown { from { transform: translateY(-26px); opacity: 0.25; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(26px); opacity: 0.25; } to { transform: translateY(0); opacity: 1; } }
+#grid.slide-down { animation: slideDown 0.4s ease; }
+#grid.slide-up { animation: slideUp 0.4s ease; }
+.cell {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 5px;
+  border-radius: 16px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.cell:hover { background: rgba(0, 0, 0, 0.05); }
+.cell:active { transform: scale(0.94); }
+.cell.empty {
+  border: 1.5px dashed rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.03);
+}
+.cell.empty:hover { background: rgba(0, 0, 0, 0.06); border-color: rgba(10, 132, 255, 0.6); }
+.cell .icon-box {
+  width: var(--icon-size, 42px); height: var(--icon-size, 42px);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  border-radius: 22%;
+}
+.cell .icon-box img { width: 100%; height: 100%; object-fit: contain; }
+.cell .plus {
+  font-size: 20px; font-weight: 400; color: rgba(0, 0, 0, 0.4);
+  line-height: 1;
+}
+.cell.fallback .icon-box { background: rgba(0, 0, 0, 0.06); }
+.cell.fallback .icon-letter {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: calc(var(--icon-size, 42px) * 0.55);
+  font-weight: 700;
+  font-family: "Bahnschrift", "Segoe UI", sans-serif;
+}
+
+/* 背景透明度弹出面板 */
+#opPanel {
+  position: absolute;
+  left: 14px; right: 14px; bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 8px 24px rgba(31, 38, 135, 0.18);
+  z-index: 10;
+}
+#opPanel[hidden] { display: none; }
+.op-label { font-size: 11px; font-weight: 600; color: #3a3a3c; flex: none; }
+.op-controls { flex: 1; display: flex; align-items: center; gap: 8px; }
+.op-val {
+  width: 40px; flex: none; text-align: right;
+  font-size: 11px; font-weight: 600; color: #0a84ff;
+  font-family: "Bahnschrift", "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+/* 自绘滑块（原生 range thumb 在本机拖不动，改 div 版） */
+.op-slider {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 14px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.10);
+  cursor: pointer;
+}
+.op-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 28%;
+  border-radius: 7px;
+  background: #0a84ff;
+}
+.op-thumb {
+  position: absolute; top: 50%; left: 28%;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22), 0 0 0 3px rgba(10, 132, 255, 0.12);
+  transition: box-shadow 0.15s ease;
+}
+.op-slider:active .op-thumb {
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28), 0 0 0 7px rgba(10, 132, 255, 0.16);
+}

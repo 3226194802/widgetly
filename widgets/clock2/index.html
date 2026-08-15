@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>数字时钟</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <div class="main">
+      <span class="hm" id="hm">00:00</span><span class="ss" id="ss">:00</span><span class="ampm" id="ampm"></span>
+    </div>
+    <div class="sub">
+      <span id="date">—</span><span class="sep">·</span><span id="week">—</span>
+    </div>
+
+    <!-- 背景透明度面板（右键菜单唤出，拖动自绘滑杆） -->
+    <div class="op-panel" id="opPanel" hidden>
+      <span class="op-label">背景透明度</span>
+      <div class="op-slider" id="opSlider">
+        <div class="op-fill" id="opFill"></div>
+        <div class="op-thumb" id="opThumb"></div>
+      </div>
+      <span class="op-val" id="opVal">78%</span>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

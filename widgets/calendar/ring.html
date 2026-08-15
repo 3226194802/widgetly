@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>日历·周环</title>
+<link rel="stylesheet" href="ring.css">
+</head>
+<body data-style="ring">
+  <div class="card" id="card">
+    <div class="glass" id="glass"></div>
+    <div class="bg"></div>
+    <div class="content">
+      <div class="head" id="rWeek">第33周 · 2026</div>
+      <div class="ring">
+        <div class="center">
+          <div class="day-halo"></div>
+          <div class="day" id="rDay">14</div>
+          <div class="meta" id="rMeta">8月 · 周五</div>
+          <div class="lunar" id="rLunar">农历七月十四</div>
+        </div>
+        <div class="dots" id="rDots"></div>
+      </div>
+    </div>
+  </div>
+  <script src="lunar-lib.js"></script>
+  <script src="lunar.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

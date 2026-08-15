@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>番茄时钟</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-phase="idle" data-ct="0">
+  <div id="card">
+    <div class="veil" id="veil"></div>
+
+    <!-- 顶栏 -->
+    <div id="titlebar">
+      <div class="tb-left">
+        <span class="logo">🍅</span>
+        <span class="app-name">番茄专注</span>
+      </div>
+      <div class="tb-right">
+        <span class="today-badge" id="todayBadge">今日 0 🍅</span>
+      </div>
+    </div>
+
+    <!-- 列表视图（默认） -->
+    <div id="listView">
+      <div id="taskList"><!-- JS 填充 --></div>
+    </div>
+    <div id="footer">
+      <span id="footText">右键菜单添加事项 · 悬停显示计时按钮</span>
+    </div>
+
+    <!-- 计时视图 -->
+    <div id="timerView" hidden>
+      <div class="ringwrap">
+        <svg class="ring" viewBox="0 0 180 180">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="var(--ring-a)"/>
+              <stop offset="100%" stop-color="var(--ring-b)"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-bg" cx="90" cy="90" r="70"/>
+          <circle class="ring-fg" id="ringFg" cx="90" cy="90" r="70"/>
+        </svg>
+        <div class="ring-glow"></div>
+        <div class="digits" id="digits">25:00</div>
+      </div>
+      <div class="task-name" id="taskName">—</div>
+      <div class="round-info" id="roundInfo"></div>
+      <div class="ctrl">
+        <button class="cbtn" id="btnPause" title="暂停/继续">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.4" y="5.4" width="3.6" height="13.2" rx="1.2"/><rect x="14" y="5.4" width="3.6" height="13.2" rx="1.2"/></svg>
+        </button>
+        <button class="cbtn" id="btnReset" title="重置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5v6h6"/><path d="M4.6 11a8 8 0 1 1 1.4 6.3"/></svg>
+        </button>
+        <button class="cbtn" id="btnSkip" title="跳过休息" hidden>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.2 6.6v10.8a1 1 0 0 0 1.52.86l8.1-5.4a1 1 0 0 0 0-1.72l-8.1-5.4A1 1 0 0 0 4.2 6.6z"/><path d="M12.5 6.6v10.8a1 1 0 0 0 1.52.86l8.1-5.4a1 1 0 0 0 0-1.72l-8.1-5.4a1 1 0 0 0-1.52.86z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 背景透明度弹出面板 -->
+    <div id="opPanel" hidden>
+      <span class="op-label">背景透明度</span>
+      <div class="op-controls">
+        <div class="op-slider" id="opSlider">
+          <div class="op-fill" id="opFill"></div>
+          <div class="op-thumb" id="opThumb"></div>
+        </div>
+        <span class="op-val" id="opVal">45%</span>
+      </div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>日历·今日脉搏</title>
+<link rel="stylesheet" href="bar.css">
+</head>
+<body data-style="bar">
+  <div class="card" id="card">
+    <div class="glass" id="glass"></div>
+    <div class="bg"></div>
+    <div class="content">
+      <div class="left">
+        <div class="day-halo"></div>
+        <div class="day" id="bDay">14</div>
+      </div>
+      <div class="right">
+        <div class="lunar" id="bLunar">七月</div>
+        <div class="date" id="bDate">2026年8月14日 · 周五</div>
+        <div class="prog-wrap">
+          <span class="prog-label">今日进度</span>
+          <div class="prog-track"><div class="prog-fill" id="bProg"></div><div class="prog-dot"></div></div>
+          <span class="prog-pct" id="bPct">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="lunar-lib.js"></script>
+  <script src="lunar.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

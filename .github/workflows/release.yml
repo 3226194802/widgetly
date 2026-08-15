@@ -1,0 +1,43 @@
+# 在 GitHub 网页上点 Run workflow、输入版本号，即可自动构建并发布新版本
+name: Build & Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '新版本号(例如 0.3.0)'
+        required: true
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 写入版本号
+        run: node -e "const fs=require('fs');const j=JSON.parse(fs.readFileSync('package.json','utf8'));j.version=process.argv[1];fs.writeFileSync('package.json',JSON.stringify(j,null,2)+'\n');" "${{ github.event.inputs.version }}"
+
+      - name: 安装依赖
+        run: npm install --no-audit --no-fund
+
+      - name: 构建安装版 + 便携版
+        run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 创建 GitHub Release 并上传
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Widgetly v${{ github.event.inputs.version }}"
+          tag_name: "v${{ github.event.inputs.version }}"
+          files: |
+            dist/Widgetly-Setup-*.exe
+            dist/Widgetly-Portable-*.exe
+            dist/latest.yml
+            dist/Widgetly-Setup-*.exe.blockmap

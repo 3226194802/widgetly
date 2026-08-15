@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>外观调节</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win { position: absolute; inset: 8px; border-radius: 18px; background: rgba(255,255,255,0.97); border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 12px 32px rgba(0,0,0,0.3); padding: 14px; display: flex; flex-direction: column; gap: 16px; }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #1d1d1f; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(0,0,0,0.08); }
+  .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .label { font-size: 12px; color: #3a3a3c; flex: none; width: 64px; }
+  .swatches { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .swatch { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.12); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+  .swatch.sel { border: 2px solid #0a84ff; }
+  .picker { width: 28px; height: 22px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; cursor: pointer; padding: 0; background: #fff; }
+  .foot { display: flex; justify-content: flex-end; }
+  .done { padding: 6px 20px; border: none; border-radius: 8px; background: rgba(0,0,0,0.08); color: #1d1d1f; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .done:hover { background: rgba(0,0,0,0.14); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">外观调节</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div class="row">
+      <span class="label">背景颜色</span>
+      <div class="swatches" id="bgSwatches"></div>
+      <input type="color" class="picker" id="bgPicker" title="自定义背景色">
+    </div>
+    <div class="row">
+      <span class="label">文字颜色</span>
+      <div class="swatches" id="textSwatches"></div>
+      <input type="color" class="picker" id="textPicker" title="自定义文字颜色">
+    </div>
+    <div class="row">
+      <span class="label">高亮颜色</span>
+      <div class="swatches" id="accentSwatches"></div>
+      <input type="color" class="picker" id="accentPicker" title="自定义高亮色">
+    </div>
+    <div class="foot">
+      <button class="done" id="doneBtn">完成</button>
+    </div>
+  </div>
+  <script src="appearance.js"></script>
+</body>
+</html>

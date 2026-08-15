@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>外观调节</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #1d1d1f; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(0, 0, 0, 0.08); }
+  #rows { display: flex; flex-direction: column; gap: 11px; overflow-y: auto; }
+  .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .label { font-size: 12px; color: #3a3a3c; flex: none; width: 86px; }
+  .swatches { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  }
+  .swatch.def { border: 1.5px dashed rgba(0, 0, 0, 0.3); }
+  .swatch.sel { border: 2.5px solid #0a84ff; box-shadow: 0 0 0 1.5px #fff inset; }
+  .picker {
+    width: 28px; height: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    cursor: pointer; padding: 0; background: #fff;
+  }
+  .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .reset { padding: 6px 14px; border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 8px; background: transparent; color: #0a84ff; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .reset:hover { background: rgba(10, 132, 255, 0.08); }
+  .done { padding: 6px 20px; border: none; border-radius: 8px; background: rgba(0, 0, 0, 0.08); color: #1d1d1f; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .done:hover { background: rgba(0, 0, 0, 0.14); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">外观调节</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div id="rows"></div>
+    <div class="foot">
+      <button class="reset" id="resetBtn">恢复默认配置</button>
+      <button class="done" id="doneBtn">完成</button>
+    </div>
+  </div>
+  <script src="appearance.js"></script>
+</body>
+</html>

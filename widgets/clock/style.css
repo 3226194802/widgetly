@@ -1,0 +1,234 @@
+/* 渐变数字时钟 —— 透明窗口：卡片外直接透明（窗口矩形不可见），卡片内毛玻璃 */
+/* Open Runde（Inter 的圆润变体，OFL 可商用）：Bold(700) 本地加载，无网络依赖 */
+@font-face {
+  font-family: 'Open Runde';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('OpenRunde-Bold.otf') format('opentype');
+}
+/* Nunito ExtraBold：备用粗圆无衬线数字（本地加载，无网络依赖） */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('Nunito-ExtraBold.woff2') format('woff2');
+}
+/* Montserrat 可变字体（Black=900）：中号时钟（clockM 实例）专用 */
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('Montserrat-Variable.ttf') format('truetype');
+}
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body {
+  width: 100%; height: 100%;
+  background-color: transparent; /* 卡片外透明，真实桌面透过来 */
+  background-repeat: no-repeat;
+  overflow: hidden;
+  border: none; outline: none;
+  font-family: 'YouYuan', '幼圆', 'Nunito', 'Dubai', sans-serif; /* 幼圆：圆幼态，笔画柔和圆润 */
+}
+
+/* 主题变量（浅色 = 白毛玻璃，深色 = 深灰毛玻璃） */
+:root {
+  --fs: 110px; /* 数字字号，由 renderer 按窗口宽度换算 */
+  --veil-bg: rgba(255,255,255,1); /* 浅色模式纯白罩（透明度 0% 时不透明背景 = 纯白） */
+  /* 罩层整体透明度（0-1，右键菜单滑杆控制：值=透明度，100=完全透明、0=完全不透明） */
+  --veil-opacity: 0.32;
+  --card-border: rgba(255,255,255,0.55);
+  --card-shadow: 0 14px 40px rgba(20,40,90,0.16); /* 仅单层柔和投影，无近距离描边层 */
+  --dot-bg: rgba(210,213,218,0.50); /* 圆点基底：浅灰色，50% 透明度 */
+  --sub-color: rgba(255,255,255,0.85);
+}
+html[data-theme="dark"] {
+  --veil-bg: rgba(42,46,62,1); /* 深色模式纯色罩 */
+  --card-border: rgba(255,255,255,0.14);
+  --card-shadow: 0 14px 40px rgba(0,0,0,0.40); /* 仅单层柔和投影，无近距离描边层 */
+  --dot-bg: rgba(210,213,218,0.50); /* 深浅色统一：浅灰 50% */
+  --sub-color: rgba(255,255,255,0.60);
+}
+
+/* 毛玻璃卡片：无内边距（卡片=窗口全尺寸，与快捷收纳 dock 卡片一致；透明窗口下卡片外即桌面）。
+   边缘微微内发光（inset：透明窗口上外发光会被窗口矩形边缘裁剪成方形，内发光不被裁剪） */
+.card {
+  position: absolute; inset: 0;
+  border-radius: 32px;
+  border: 1px solid rgba(255,255,255,0.15); /* 很淡的白色透明边缘（玻璃拟态） */
+  outline: none;
+  overflow: hidden; /* 裁掉模糊层溢出边缘 */
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 0 26px rgba(185, 220, 255, 0.13),
+    inset 0 0 6px rgba(255, 255, 255, 0.14);
+  display: flex; align-items: center; justify-content: center;
+}
+html[data-theme="dark"] .card {
+  box-shadow:
+    inset 0 0 26px rgba(140, 180, 255, 0.07),
+    inset 0 0 6px rgba(255, 255, 255, 0.05);
+}
+
+/* 背景容器：玻璃模糊层 + 半透明罩统包，透明度滑杆控制整体（100=完全透明，桌面直接可见） */
+.bg {
+  position: absolute; inset: 0; z-index: 0;
+  opacity: var(--veil-opacity);
+}
+
+/* 壁纸模糊层：外扩 30px（blur 外溢部分被卡片 overflow hidden 裁掉，卡片内侧边缘不再有"稀释光晕圈"）；
+   background-attachment: fixed → 背景相对窗口定位，不受元素外扩影响，与 body 壁纸层对齐 */
+.glass {
+  position: absolute; inset: -30px; z-index: 0;
+  border-radius: inherit;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  filter: blur(26px) saturate(1.25) brightness(1.06);
+}
+/* 半透明罩：多层背景——右下暖黄光斑 + 左上浅白光晕 + 顶部微暗 + 白色基底（隐约透出模糊背景色彩） */
+.veil {
+  position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit; /* 与 .card 一致，防直角边露出 */
+  background:
+    radial-gradient(ellipse 90% 70% at 88% 96%, rgba(255,190,110,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 6% 4%, rgba(255,255,255,0.5) 0%, transparent 55%),
+    radial-gradient(ellipse 110% 90% at 50% -10%, rgba(130,140,160,0.10) 0%, transparent 60%),
+    linear-gradient(160deg, #ffffff 0%, #e8ebef 100%); /* 不透明白基底：0%透明度=纯白 */
+  opacity: var(--veil-opacity);
+}
+html[data-theme="dark"] .veil {
+  background:
+    radial-gradient(ellipse 90% 70% at 88% 96%, rgba(255,180,100,0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 6% 4%, rgba(255,255,255,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 110% 90% at 50% -10%, rgba(90,100,125,0.15) 0%, transparent 60%),
+    linear-gradient(160deg, rgba(42,46,62,0.92) 0%, rgba(26,29,40,0.82) 100%);
+}
+
+.content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; } /* 上下左右居中 */
+
+/* 时间行：隔离混合上下文，数字重叠处颜色自然融合 */
+.time-row { display: flex; align-items: center; justify-content: center; isolation: isolate; }
+
+/* 单个数字：独立线性渐变填充（background-clip: text）；粗体 800；
+   交替倾斜 + 相邻轻微重合。
+   字体 Nunito ExtraBold 优先：笔画宽厚、内孔小（"跑道"内轮廓向中心收，字形更宽更实） */
+.digit {
+  width: auto; /* 关键：字形自然宽度——固定 0.44 盒宽时 background-clip:text 的渐变只铺盒子内，字形超出部分无渐变被"切掉" */
+  text-align: center;
+  font-size: var(--fs);
+  font-family: 'Open Runde', 'Nunito', 'YouYuan', '幼圆', sans-serif; /* Open Runde：Inter 圆润变体，iOS 圆体数字感 */
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.8; /* 数字 80% 透明度（8/12 用户要求） */
+  letter-spacing: calc(var(--fs) * -0.012);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  -webkit-text-stroke-width: calc(var(--fs) * 0.012); /* 同色细描边，补回 Open Runde 700 相对 SF Heavy 800 的字重差 */
+  mix-blend-mode: multiply; /* 重叠区颜色相乘融合（配合 time-row 的 isolation） */
+}
+/* 倾斜：左边 3 个数字整体左倾，右边 1 个数字右倾（"一点点"=6°） */
+.time-row .digit:nth-child(1),
+.time-row .digit:nth-child(2),
+.time-row .digit:nth-child(4) { transform: skewX(-6deg); }
+.time-row .digit:nth-child(5) { transform: skewX(6deg); }
+/* 间距：数字轻微贴合（-2%），保证放大后完整放进卡片 */
+.time-row .digit:not(:first-child) { margin-left: calc(var(--fs) * -0.02); }
+/* 层次从左到右依次升高：右边数字压在左边数字上（8/12 用户要求） */
+.time-row .digit:nth-child(1) { z-index: 1; }
+.time-row .digit:nth-child(2) { z-index: 2; }
+.time-row .digit:nth-child(4) { z-index: 4; }
+.time-row .digit:nth-child(5) { z-index: 5; }
+/* 交替渐变（fallback）：斜向，鲜艳饱满亮蓝→亮绿 / 亮绿→亮蓝 */
+.d-a { background-image: linear-gradient(135deg, #2B7FFF 0%, #00E676 100%); }
+.d-b { background-image: linear-gradient(135deg, #00E676 0%, #2B7FFF 100%); }
+
+/* 按「时间中的位置」赋予渐变（与数字内容无关）：
+   第1位 偏蓝、第2位 蓝青、第3位 青绿、第4位 绿色——起止色互相衔接，整体连成一条蓝→青→绿渐变色带。
+   每位内部：斜向渐变 + 顶部非常淡的白色高光（柔和层次感，无描边无发光）。 */
+#h1 { -webkit-text-stroke-color: #2B7FFF; background-image:
+  linear-gradient(180deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0) 40%),
+  linear-gradient(135deg, #2B7FFF 0%, #00C6FF 100%); }
+#h2 { -webkit-text-stroke-color: #00C6FF; background-image:
+  linear-gradient(180deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0) 40%),
+  linear-gradient(135deg, #00C6FF 0%, #00E5C8 100%); }
+#m1 { -webkit-text-stroke-color: #00E5C8; background-image:
+  linear-gradient(180deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0) 40%),
+  linear-gradient(135deg, #00E5C8 0%, #3DE57A 100%); }
+#m2 { -webkit-text-stroke-color: #3DE57A; background-image:
+  linear-gradient(180deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0) 40%),
+  linear-gradient(135deg, #3DE57A 0%, #00E676 100%); }
+
+/* 数字倾斜：左边三个数字 -7°，右边数字 +5°，以数字底部为轴。
+   偏移量按字号比例（calc 相对 --fs，小号窗口自动缩放）；
+   小时组与分钟组中间留出圆点空隙，数字不被圆点遮挡 */
+#h1 { transform: translateX(calc(var(--fs) * -0.25)) scaleX(1.47) scaleY(1.75) rotate(-3deg); transform-origin: 50% 50%; z-index: 4; } /* 第1位 -3°；左移 0.25×fs */
+#h2 { transform: translateX(calc(var(--fs) * -0.18)) scaleX(1.47) scaleY(1.75) rotate(3deg); transform-origin: 50% 50%; z-index: 4; } /* 第2位 +3°；左移 0.18×fs */
+#m1 { transform: translateX(calc(var(--fs) * 0.13)) scaleX(1.47) scaleY(1.75) rotate(-4deg); transform-origin: 50% 50%; z-index: 4; } /* 第3位 -4°；右移 0.13×fs */
+#m2 { transform: translateX(calc(var(--fs) * 0.20)) scaleX(1.47) scaleY(1.75) rotate(3deg); transform-origin: 50% 50%; z-index: 4; } /* 第4位 +3°；右移 0.20×fs */
+
+/* ---- 中号时钟（clockM 实例）Montserrat Black 特调：数字笔画(ink)高度=窗口高（fs 92 × ink 0.74 × 2.17 ≈ 148px），横向 0.97 防溢出，对称居中 ---- */
+html.clockm-font .digit {
+  font-family: 'Montserrat', 'Open Runde', 'Nunito', 'YouYuan', '幼圆', sans-serif;
+  font-weight: 900;
+  -webkit-text-stroke-width: 0; /* 中号时钟（Montserrat 900）无需补描边 */
+}
+/* 数字角度全部 0°（不倾斜），只保留平移与缩放 */
+html.clockm-font #h1 { transform: translateX(calc(var(--fs) * -0.15)) scaleX(0.97) scaleY(2.17) rotate(0deg); transform-origin: 50% 50%; z-index: 4; }
+html.clockm-font #h2 { transform: translateX(calc(var(--fs) * -0.10 + 3px)) scaleX(0.97) scaleY(2.17) rotate(0deg); transform-origin: 50% 50%; z-index: 4; }
+html.clockm-font #m1 { transform: translateX(calc(var(--fs) * 0.10 - 2px)) scaleX(0.97) scaleY(2.17) rotate(0deg); transform-origin: 50% 50%; z-index: 4; }
+html.clockm-font #m2 { transform: translateX(calc(var(--fs) * 0.15)) scaleX(0.97) scaleY(2.17) rotate(0deg); transform-origin: 50% 50%; z-index: 4; }
+/* 隐藏中间冒号圆点 */
+html.clockm-font .colon { display: none; }
+/* 小时两个数字：默认白色实心（外观调节可改颜色） */
+html.clockm-font #h1,
+html.clockm-font #h2 {
+  background-image: none;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+/* 分钟两个数字：默认白色空心描边（透明填充 + 白描边；外观调节可改描边颜色） */
+html.clockm-font #m1,
+html.clockm-font #m2 {
+  background-image: none;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: calc(var(--fs) * 0.018) #ffffff;
+  text-shadow: none;
+  mix-blend-mode: normal;
+}
+/* 数字组整体水平居中（抵消左右不对称偏移） */
+html.clockm-font .time-row { padding-left: calc(var(--fs) * 0.02); }
+
+/* 竖排两个半透明圆点（分隔时与分）：0.20×字号（再放大一倍），浅灰基底 50% 透明度。
+   重叠到数字上面：z-index 3 盖住数字，向左平移压到左边数字（h2）上 */
+.colon {
+  position: absolute; left: 50%; top: 50%; /* 绝对定位：不占布局空间，居中于时间行 */
+  transform: translate(-50%, -50%);
+  z-index: 5; /* 圆点保持最上层 */
+  display: flex; flex-direction: column; align-items: center;
+  gap: calc(var(--fs) * 0.28); /* 两点间距 = 圆点直径（保持 1:1 比例） */
+}
+.dot {
+  width: calc(var(--fs) * 0.28); /* 视觉 24px 不变（fs 85 时补偿） */
+  height: calc(var(--fs) * 0.28);
+  border-radius: 50%;
+  opacity: 0.6; /* 透明度 60%（用户要求） */
+  /* 柔和的半透明灰白小球：左上淡高光 + 灰白过渡；渐变本身不透明，最终不透明度 = 0.6 整 */
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,1) 0%, rgba(238,241,245,1) 45%, rgba(212,217,224,1) 100%);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+
+/* 12 小时制的 AM/PM 小标（时间行右侧） */
+.ampm {
+  margin-left: calc(var(--fs) * 0.05);
+  font-size: calc(var(--fs) * 0.15);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--sub-color);
+  opacity: 0.75;
+}

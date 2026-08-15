@@ -1,0 +1,45 @@
+/* 日历·全景 —— 超大号 342×500：深夜蓝紫 + 完整月历(带农历) + 节气胶囊 + 今日进度 */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../clock/Montserrat-Variable.ttf') format('truetype'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 800; font-display: swap; src: url('../clock/Nunito-ExtraBold.woff2') format('woff2'); }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+.card {
+  position: absolute; inset: 0; border-radius: 30px; border: 1px solid rgba(255,255,255,0.16);
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);   /* 实时毛玻璃 */
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);     /* 只内阴影 */
+}
+.glass { display: none; }
+.bg {
+  position: absolute; inset: 0; opacity: var(--veil-opacity, 0.2);
+  background:
+    radial-gradient(ellipse 90% 60% at 90% 0%, var(--accent-dim) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 0% 100%, rgba(90,60,180,0.28) 0%, transparent 55%),
+    linear-gradient(160deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 55%, #1a0f38) 100%);
+}
+.content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 18px 16px 14px; }
+.top { position: relative; flex: none; display: flex; align-items: center; gap: 14px; padding-bottom: 12px; }
+.day-halo { position: absolute; left: -4px; top: -8px; width: 96px; height: 96px; border-radius: 50%; background: var(--accent-glow); filter: blur(14px); }
+.day { position: relative; font-family: 'Nunito', '幼圆', 'YouYuan', 'Montserrat', sans-serif; font-weight: 800; font-size: 68px; line-height: 1; color: #ffffff; text-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+.meta { flex: 1; min-width: 0; font-size: 12px; color: var(--text-dim); letter-spacing: 0.4px; line-height: 1.7; }
+.dow-row { flex: none; display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; padding-bottom: 6px; }
+.dow-row span { text-align: center; font-size: 10px; font-weight: 700; color: var(--text-faint); letter-spacing: 1px; }
+.grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(6, 1fr); gap: 4px; min-height: 0; }
+.cell { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 10px; }
+.cell .num { position: relative; z-index: 2; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 14px; color: var(--text); }
+.cell .lun { position: relative; z-index: 2; font-size: 8.5px; color: var(--text-faint); white-space: nowrap; }
+.cell.other .num, .cell.other .lun { opacity: 0.28; }
+.cell.wk .num { color: var(--accent); opacity: 0.9; }
+/* 今天：底层金色大柔光 + 上层 80% 透明金圆 + 实心金字（三层） */
+.cell.today::before { content: ''; position: absolute; inset: 4%; border-radius: 12px; background: var(--accent-glow); filter: blur(6px); }
+.cell.today::after { content: ''; position: absolute; inset: 4%; border-radius: 12px; background: var(--accent-soft); }
+.cell.today .num { color: #ffffff; font-weight: 800; }
+.cell.today .lun { color: rgba(255,255,255,0.8); }
+.terms { flex: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0 8px; }
+.term-cap { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--accent-dim); color: var(--text); letter-spacing: 0.5px; }
+.prog-wrap { flex: none; display: flex; align-items: center; gap: 10px; }
+.prog-track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.14); overflow: hidden; }
+.prog-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-dim)); transition: width 0.6s ease; }
+.prog-dot { position: absolute; right: -2px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px var(--accent-glow); }
+.prog-label { flex: none; font-size: 10px; color: var(--text-faint); letter-spacing: 1px; }

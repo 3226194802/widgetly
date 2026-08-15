@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>添加事项</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 16px;
+    background: linear-gradient(168deg, rgba(56, 44, 38, 0.97), rgba(36, 28, 24, 0.98));
+    border: 1px solid rgba(255, 240, 220, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 12px 32px rgba(0, 0, 0, 0.45);
+    padding: 13px 15px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 13px; font-weight: 800; color: #f1e8d8; letter-spacing: 0.5px; }
+  .close { width: 22px; height: 22px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #b3a691; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(255, 255, 255, 0.1); }
+  input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 240, 220, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+    color: #f1e8d8; font-size: 13px; font-family: inherit;
+    outline: none;
+  }
+  input:focus { border-color: rgba(255, 107, 82, 0.55); }
+  input::placeholder { color: rgba(179, 166, 145, 0.5); }
+  .foot { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn { padding: 6px 18px; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .add { background: linear-gradient(135deg, #ff6b52, #e8432e); color: #fff; font-weight: 600; }
+  .add:hover { filter: brightness(1.08); }
+  .cancel { background: rgba(255, 255, 255, 0.1); color: #e5dccb; }
+  .cancel:hover { background: rgba(255, 255, 255, 0.16); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">添加事项</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <input id="input" maxlength="60" placeholder="要专注做什么？" autofocus>
+    <div class="foot">
+      <button class="btn cancel" id="cancelBtn">取消</button>
+      <button class="btn add" id="addBtn">添加</button>
+    </div>
+  </div>
+  <script src="add.js"></script>
+</body>
+</html>

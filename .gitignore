@@ -1,0 +1,33 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+out/
+release/
+
+# 运行期配置（含用户实例数据，绝不提交）
+config.json
+*.log
+
+# 调试日志
+widgetly-debug.log
+
+# 临时文件
+.smoke-*
+.verify-*
+.test-*
+*.tmp
+
+# 运行期产物
+LocalLow/
+icon-cache/
+
+# 系统
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/

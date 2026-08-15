@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Widgetly 组件坞</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- 顶栏 -->
+    <div class="topbar">
+      <div class="brand">
+        <img class="brand-logo" src="../assets/icon.png" alt="Widgetly">
+        <div class="brand-name">Widgetly <span class="brand-sub">组件坞</span></div>
+      </div>
+      <div class="topbar-actions">
+        <div class="opacity-ctl" title="背景透明度">
+          <span class="op-icon">◐</span>
+          <div class="op-track" id="opTrack">
+            <div class="op-fill" id="opFill"></div>
+            <div class="op-thumb" id="opThumb"></div>
+          </div>
+          <span class="op-val" id="opVal">78%</span>
+        </div>
+        <span class="tb-btn" id="btnSettings" title="设置">⚙</span>
+        <span class="tb-btn" id="btnClose" title="最小化到托盘">—</span>
+        <span class="tb-btn" id="btnQuit" title="退出">×</span>
+      </div>
+    </div>
+
+    <!-- 主体：左侧导航 + 右侧卡片区 -->
+    <div class="main">
+      <div class="sidebar">
+        <div class="search">
+          <span class="search-icon">🔍</span>
+          <input id="searchInput" type="text" placeholder="搜索组件">
+        </div>
+        <div class="nav" id="nav"><!-- JS 渲染分类 --></div>
+      </div>
+      <div class="content">
+        <div class="grid" id="grid"><!-- JS 渲染 --></div>
+        <div class="footbar">
+          <span class="foot-hint">点击卡片添加 · 拖动卡片排序 · 滚动查看</span>
+          <span class="foot-ver">v0.2.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+/* 日历·青柠 —— 中正方形 140×148：薄荷绿清新竖卡 + 大日期 + 本周进度 */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../clock/Montserrat-Variable.ttf') format('truetype'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 800; font-display: swap; src: url('../clock/Nunito-ExtraBold.woff2') format('woff2'); }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+.card {
+  position: absolute; inset: 0; border-radius: 22px; border: 1px solid rgba(255,255,255,0.55);
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);   /* 实时模糊 */
+  backdrop-filter: blur(14px) saturate(1.15);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);     /* 只内阴影 */
+}
+.glass { display: none; }
+.bg {
+  position: absolute; inset: 0; opacity: var(--veil-opacity, 0.2);
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 26%, rgba(255,255,255,0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 60% at 50% 100%, var(--accent-dim) 0%, transparent 55%),
+    linear-gradient(168deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, #8fd3b0) 100%);
+}
+.content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; padding: 10px 10px 8px; }
+.head { flex: none; font-size: 10.5px; font-weight: 700; color: var(--text-dim); letter-spacing: 1px; }
+.main { position: relative; flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; }
+/* 大日期：底层柔光 + 圆体实心（层次感） */
+.day-halo { position: absolute; width: 88px; height: 88px; border-radius: 50%; background: var(--accent-glow); filter: blur(12px); }
+.day { position: relative; font-family: 'Nunito', '幼圆', 'YouYuan', 'Montserrat', sans-serif; font-weight: 800; font-size: 58px; line-height: 1; color: var(--text); }
+.day::after { content: ''; position: absolute; left: 8%; right: 8%; bottom: -4px; height: 3px; border-radius: 2px; background: var(--accent); opacity: 0.85; }
+.sub { flex: none; font-size: 10.5px; font-weight: 600; color: var(--text); letter-spacing: 0.4px; white-space: nowrap; }
+.prog-wrap { flex: none; width: 100%; display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.prog-track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.08); overflow: hidden; }
+.prog-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-dim)); transition: width 0.6s ease; }
+.prog-dot { position: absolute; right: -2px; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px var(--accent-glow); }
+.prog-label { flex: none; font-size: 8.5px; font-weight: 700; color: var(--text-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }

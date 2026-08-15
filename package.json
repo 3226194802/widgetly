@@ -1,0 +1,81 @@
+{
+  "name": "widgetly",
+  "productName": "Widgetly",
+  "version": "0.2.0",
+  "description": "Widgetly 组件坞 —— Windows 桌面小组件中心",
+  "main": "main.js",
+  "private": true,
+  "author": "Widgetly",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3226194802/widgetly.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:portable": "electron-builder --win portable",
+    "build:dir": "electron-builder --dir",
+    "dist": "electron-builder --win --publish never",
+    "release": "electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "fzstd": "^0.1.1",
+    "koffi": "^3.1.5",
+    "zstddec": "^0.2.0"
+  },
+  "devDependencies": {
+    "electron": "^40.10.2",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.widgetly.app",
+    "productName": "Widgetly",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "3226194802",
+        "repo": "widgetly-releases"
+      }
+    ],
+    "files": [
+      "main.js",
+      "manager/**/*",
+      "widgets/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Widgetly 组件坞",
+      "artifactName": "Widgetly-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "Widgetly-Portable-${version}.exe"
+    }
+  }
+}

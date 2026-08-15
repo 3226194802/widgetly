@@ -1,0 +1,125 @@
+/* ===== 内存监控组件 —— 280×180：实时内存心电图 + 磁盘存储 =====
+   背景：毛玻璃稍微模糊版（backdrop-filter 实时渲染，比一般毛玻璃更"毛"） */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../clock/Montserrat-Variable.ttf') format('truetype'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 800; font-display: swap; src: url('../clock/Nunito-ExtraBold.woff2') format('woff2'); }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --curve: #ffd24a;    /* 心电图曲线色（外观可调） */
+  --bar: #a07fff;      /* 进度条色（外观可调） */
+  --fontc: #f2eee6;    /* 字体色（外观可调） */
+  --bgc: #191722;      /* 背景基色（外观可调） */
+  --fontc-dim: color-mix(in srgb, var(--fontc) 62%, transparent);
+  --fontc-faint: color-mix(in srgb, var(--fontc) 40%, transparent);
+  --line: color-mix(in srgb, var(--fontc) 16%, transparent);
+  --num-font: 'Montserrat', 'PingFang SC', sans-serif;
+}
+
+/* 主卡：圆角 20px，比一般毛玻璃更模糊的实时毛玻璃（背景模式由 data-bg 控制） */
+#card {
+  position: absolute; inset: 0;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.10);   /* 边框比毛玻璃更轻 */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 11px 15px 11px;
+}
+/* 罩层：色罩（透明/毛玻璃/纯色 三种模式） */
+.veil {
+  position: absolute; inset: 0; z-index: 0;
+  background: var(--bgc);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+#card > *:not(.veil) { position: relative; z-index: 1; }
+
+/* 背景模式 */
+body[data-bg="transparent"] #card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body[data-bg="transparent"] .veil { opacity: 0; }
+body[data-bg="frosted"] #card {
+  -webkit-backdrop-filter: blur(26px) saturate(1.15);   /* 更"毛"的实时模糊 */
+  backdrop-filter: blur(26px) saturate(1.15);
+}
+body[data-bg="frosted"] .veil { opacity: 0.62; }
+body[data-bg="solid"] #card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body[data-bg="solid"] .veil { opacity: 1; }
+
+/* ---------- 顶部：内存 + 若隐若现的细横线 ---------- */
+#titlebar {
+  flex: none;
+  display: flex; align-items: center; gap: 9px;
+  height: 19px;
+}
+.title { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--fontc); }
+.title-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
+  opacity: 0.7;
+}
+
+/* ---------- 中间：运行内存 ---------- */
+#ram {
+  flex: none;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  height: 37px;
+}
+.ram-pct { display: flex; align-items: baseline; line-height: 1; }
+.pct-num {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 31px;
+  color: var(--curve);
+  font-variant-numeric: tabular-nums;
+}
+.pct-sign { font-size: 15px; font-weight: 700; color: var(--curve); margin-left: 1px; }
+.ram-frac {
+  font-family: var(--num-font);
+  font-size: 12.5px; font-weight: 600;
+  color: var(--fontc-dim);
+  font-variant-numeric: tabular-nums;
+  padding-bottom: 4px;
+}
+
+/* ---------- 心电图曲线 ---------- */
+#ecgWrap { flex: 1; min-height: 0; margin-top: 2px; }
+#ecg { width: 100%; height: 100%; display: block; }
+
+/* ---------- 底部：存储 ---------- */
+#storage { flex: none; }
+.storage-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--fontc-faint); padding: 3px 1px 4px; }
+#diskList { display: flex; flex-direction: column; gap: 5px; }
+.disk-row { display: flex; align-items: center; gap: 8px; }
+.disk-letter {
+  flex: none; width: 30px;
+  font-size: 11.5px; font-weight: 700; color: var(--fontc);
+}
+.disk-pct {
+  flex: none; width: 34px; text-align: right;
+  font-family: var(--num-font); font-size: 11px; font-weight: 600;
+  color: var(--bar); font-variant-numeric: tabular-nums;
+}
+.disk-bar {
+  flex: 1; height: 5px; border-radius: 3px;
+  background: color-mix(in srgb, var(--fontc) 14%, transparent);
+  overflow: hidden;
+}
+.disk-fill {
+  height: 100%; border-radius: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--bar), color-mix(in srgb, var(--bar) 62%, #fff 38%));
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.disk-frac {
+  flex: none; width: 92px; text-align: right;
+  font-family: var(--num-font); font-size: 11px; font-weight: 600;
+  color: var(--fontc-dim); font-variant-numeric: tabular-nums;
+}

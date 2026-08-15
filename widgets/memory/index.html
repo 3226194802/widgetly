@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>内存监控</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-bg="frosted">
+  <div id="card">
+    <div class="veil" id="veil"></div>
+
+    <!-- 顶部：内存 + 细横线 -->
+    <div id="titlebar">
+      <span class="title">内存</span>
+      <span class="title-line"></span>
+    </div>
+
+    <!-- 中间：运行内存（大百分比 + 分数 + 心电图曲线） -->
+    <div id="ram">
+      <div class="ram-left">
+        <div class="ram-pct"><span class="pct-num" id="ramPctNum">0</span><span class="pct-sign">%</span></div>
+      </div>
+      <div class="ram-frac" id="ramFrac">0G / 0G</div>
+    </div>
+    <div id="ecgWrap">
+      <canvas id="ecg"></canvas>
+    </div>
+
+    <!-- 底部：存储（盘符 + 百分比 + 进度条 + 分数） -->
+    <div id="storage">
+      <div class="storage-label">存储</div>
+      <div id="diskList"><!-- JS 填充 --></div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

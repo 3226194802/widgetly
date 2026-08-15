@@ -1,0 +1,38 @@
+/* 图库组件 —— 图片铺满卡片，无缝交叉淡化；卡片透明（无深色底、无描边环） */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+/* 卡片：纯裁切容器（图片圆角由它裁出，无任何边框/底色，杜绝黑色线圈） */
+.card {
+  position: absolute; inset: 0;
+  border-radius: 22px;
+  overflow: hidden;
+  cursor: pointer;
+}
+/* 双图层：绝对定位铺满 + cover 裁切 + 透明度过渡（交叉淡化） */
+.layer {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  will-change: opacity;
+}
+.layer.show { opacity: 1; }
+/* 占位（无图/未设置文件夹时）：轻微深色底，仅此时可见 */
+#placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 22px;
+  background: rgba(28, 32, 40, 0.9);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  text-align: center;
+  padding: 12px;
+  line-height: 1.7;
+}

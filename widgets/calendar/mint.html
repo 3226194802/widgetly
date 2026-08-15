@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>日历·青柠</title>
+<link rel="stylesheet" href="mint.css">
+</head>
+<body data-style="mint">
+  <div class="card" id="card">
+    <div class="glass" id="glass"></div>
+    <div class="bg"></div>
+    <div class="content">
+      <div class="head" id="tHead">8月 · 2026</div>
+      <div class="main">
+        <div class="day-halo"></div>
+        <div class="day" id="tDay">14</div>
+      </div>
+      <div class="sub" id="tSub">周五 · 农历初二</div>
+      <div class="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" id="tProg"></div><div class="prog-dot"></div></div>
+        <span class="prog-label" id="tProgLabel">本周 6/7</span>
+      </div>
+    </div>
+  </div>
+  <script src="lunar-lib.js"></script>
+  <script src="lunar.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

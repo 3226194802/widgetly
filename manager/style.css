@@ -1,0 +1,268 @@
+/* Widgetly 组件坞 —— 管理器（浅绿 + 左侧导航 + 卡片，对齐参考图） */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body {
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, "SF Pro Display", "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #1d3a2e;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 名称字体：Open Runde（Inter 圆润变体，OFL 可商用） */
+@font-face {
+  font-family: 'Open Runde';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../widgets/clock/OpenRunde-Bold.otf') format('opentype');
+}
+
+.app {
+  position: absolute; inset: 0;   /* 铺满窗口，无白框 */
+  border-radius: 32px;            /* 与时钟组件一致的大圆角（配合 DWM 窗口裁圆角，四角无直角） */
+  border: none;                   /* 去掉白色描边（消除四边白色阴影感） */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: appIn 0.45s cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+/* 主区域容器：透明（让侧栏露出 Acrylic；内容区背景由 .content 承担） */
+.main {
+  position: relative; z-index: 2;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+/* 顶栏 / 左侧导航：实时毛玻璃（backdrop-filter 实时模糊桌面，与组件同款）
+   罩层 = 独立渐变天空蓝罩（::before），opacity 由滑块控制（--nav-a：0%=不透明，100%=全透明只留模糊） */
+.topbar,
+.sidebar {
+  position: relative;
+  -webkit-backdrop-filter: blur(var(--nav-blur, 24px)) saturate(1.25);
+  backdrop-filter: blur(var(--nav-blur, 24px)) saturate(1.25);
+}
+.topbar::before,
+.sidebar::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+  /* 罩层 = 主页底色同款天空蓝（0% 透明度时与主页颜色一致；100% 露出 Acrylic 模糊桌面） */
+  background:
+    radial-gradient(ellipse 90% 70% at 88% 96%, rgba(255, 255, 255, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 6% 4%, rgba(255, 255, 255, 0.4) 0%, transparent 55%),
+    linear-gradient(160deg, #a5cbe6 0%, #b8d8ee 100%);
+  opacity: var(--nav-a, 0.5);
+}
+.topbar {
+  z-index: 3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+}
+.sidebar {
+  z-index: 3;
+  border-right: 1px solid rgba(255, 255, 255, 0.55);
+}
+.topbar > *,
+.sidebar > * { position: relative; z-index: 1; }
+@keyframes appIn {
+  from { transform: scale(0.94) translateY(14px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* 顶栏 */
+.topbar {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 10px;
+  -webkit-app-region: drag;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-logo {
+  width: 30px; height: 30px; border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(18, 184, 134, 0.35);
+  -webkit-app-region: no-drag;
+}
+.brand-name { font-size: 15px; font-weight: 700; letter-spacing: 0.3px; color: #173527; }
+.brand-sub { font-size: 12px; font-weight: 400; color: rgba(23, 53, 39, 0.55); margin-left: 2px; }
+.topbar-actions { display: flex; gap: 8px; -webkit-app-region: no-drag; }
+.tb-btn {
+  width: 26px; height: 26px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: rgba(23, 53, 39, 0.55);
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.tb-btn:hover { background: rgba(255, 255, 255, 0.7); color: #173527; }
+
+/* 背景透明度调节（右上角） */
+.opacity-ctl {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.op-icon { font-size: 11px; opacity: 0.55; line-height: 1; }
+.op-track { position: relative; width: 64px; height: 14px; cursor: pointer; }
+.op-fill {
+  position: absolute; left: 0; top: 5px;
+  height: 4px; border-radius: 2px;
+  background: rgba(10, 143, 106, 0.85);
+  width: 78%;
+}
+.op-thumb {
+  position: absolute; top: 0; left: 78%;
+  width: 14px; height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.op-val {
+  font-size: 11px; font-weight: 600; color: rgba(23, 53, 39, 0.72);
+  min-width: 30px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 主体：左导航 + 右卡片 */
+.main {
+  position: relative; z-index: 2;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* 左侧导航 */
+.sidebar {
+  width: 172px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 12px 14px 16px;
+}
+.search {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 11px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 8px rgba(30, 90, 60, 0.08);
+}
+.search-icon { font-size: 12px; opacity: 0.6; }
+.search input {
+  flex: 1; min-width: 0;
+  border: none; outline: none; background: transparent;
+  font-size: 12px; color: #173527;
+  font-family: inherit;
+}
+.search input::placeholder { color: rgba(23, 53, 39, 0.45); }
+
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13px; font-weight: 600;
+  color: rgba(23, 53, 39, 0.72);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.nav-item:hover { background: rgba(255, 255, 255, 0.4); color: #173527; }
+.nav-item:active { transform: scale(0.96); }
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.85);
+  color: #0a8f6a;
+  box-shadow: 0 3px 10px rgba(30, 90, 60, 0.12);
+}
+.nav-icon {
+  width: 22px; height: 22px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.nav-icon svg { width: 14px; height: 14px; color: inherit; }
+.nav-item.active .nav-icon { background: rgba(18, 184, 134, 0.16); }
+
+/* 右侧卡片区（主区域背景：天空蓝实色，遮住 Acrylic） */
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #a5cbe6;   /* 天空蓝 */
+}
+.grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 8px 9px;
+  padding: 6px 12px 8px 6px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.grid::-webkit-scrollbar { width: 0; }
+
+/* 卡片：无外框，组件原始尺寸直接展示；名字悬浮在组件下方 */
+.item {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  opacity: 0;
+  animation: itemIn 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.item:hover { transform: scale(1.02); }
+.item.dragging { opacity: 0.35; }
+.item.insert-before { box-shadow: -3px 0 0 #0a84ff; }
+.item.insert-after { box-shadow: 3px 0 0 #0a84ff; }
+@keyframes itemIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.frame {
+  flex: none;
+  border: none;
+  background: transparent;
+  pointer-events: none;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+/* 名称（Open Runde，悬浮在组件下方） */
+.name {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  font-family: 'Open Runde', -apple-system, 'PingFang SC', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  color: rgba(23, 53, 39, 0.85);
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.item:hover .name { background: rgba(255, 255, 255, 0.92); color: rgba(23, 53, 39, 0.95); }
+
+/* 底栏 */
+.footbar {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 22px 12px;
+  font-size: 11px; color: rgba(40, 60, 90, 0.7);   /* 天空蓝背景上深色文字 */
+  background: #a5cbe6;
+}

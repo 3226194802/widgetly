@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>每日待办设置</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #eef0f3; }
+  .win { height: 100%; display: flex; flex-direction: column; }
+  .head {
+    flex: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px 10px;
+    -webkit-app-region: drag;
+  }
+  .title { font-size: 16px; font-weight: 800; color: #1d1d1f; letter-spacing: 0.5px; }
+  .close {
+    width: 28px; height: 28px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: #666; cursor: pointer;
+    -webkit-app-region: no-drag;
+    background: rgba(0, 0, 0, 0.06);
+  }
+  .close:hover { background: rgba(0, 0, 0, 0.12); color: #333; }
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+    padding: 6px 18px 16px;
+    min-height: 0;
+  }
+  .day-card {
+    display: flex; flex-direction: column;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    padding: 12px;
+    overflow: hidden;
+  }
+  .day-title { font-size: 13px; font-weight: 800; color: #1d1d1f; flex: none; }
+  .day-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 6px; flex: none;
+  }
+  .copy-btn {
+    flex: none;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 7px;
+    background: rgba(10, 132, 255, 0.1);
+    color: #0a84ff;
+    cursor: pointer;
+    border: 1px solid rgba(10, 132, 255, 0.28);
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: rgba(10, 132, 255, 0.2); }
+  .day-list {
+    flex: 1; min-height: 0;
+    margin-top: 8px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .day-list::-webkit-scrollbar { width: 0; }
+  .todo-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .todo-row:hover { background: rgba(0, 0, 0, 0.05); }
+  .todo-row:hover .todo-del { opacity: 1; }
+  .check {
+    width: 16px; height: 16px; flex: none;
+    border-radius: 50%;
+    border: 1.5px solid rgba(0, 0, 0, 0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #fff;
+  }
+  .todo-row.done .check { background: #34c759; border-color: #34c759; }
+  .todo-text {
+    flex: 1; min-width: 0;
+    font-size: 12px; color: rgba(30, 40, 50, 0.9);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .todo-row.done .todo-text { text-decoration: line-through; color: rgba(30, 40, 50, 0.45); }
+  .todo-del {
+    flex: none; font-size: 11px; color: #999; opacity: 0;
+    padding: 0 3px; border-radius: 5px; cursor: pointer;
+  }
+  .todo-del:hover { color: #ff3b30; }
+  .add-row {
+    flex: none;
+    margin-top: 8px;
+    padding: 5px 6px;
+    font-size: 12px; color: rgba(20, 120, 220, 0.9);
+    cursor: pointer; border-radius: 8px;
+    text-align: center;
+  }
+  .add-row:hover { background: rgba(10, 132, 255, 0.1); }
+  .add-input {
+    flex: none;
+    margin-top: 6px;
+    padding: 6px 8px;
+    border: 1px solid rgba(10, 132, 255, 0.5);
+    border-radius: 8px;
+    background: #fff;
+    font-size: 12px; color: #1d1d1f;
+    outline: none; font-family: inherit;
+  }
+  .empty-tip { font-size: 12px; color: rgba(30, 40, 50, 0.4); padding: 6px; }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">每日待办设置</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>

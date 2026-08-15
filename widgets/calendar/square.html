@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>日历·月相月历</title>
+<link rel="stylesheet" href="square.css">
+</head>
+<body data-style="square">
+  <div class="card" id="card">
+    <div class="glass" id="glass"></div>
+    <div class="bg"></div>
+    <div class="content">
+      <div class="head">
+        <span class="title" id="sTitle">2026 · 8月</span>
+        <span class="moon" id="sMoon">🌘</span>
+      </div>
+      <div class="dow-row"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+      <div class="grid" id="sGrid"></div>
+    </div>
+  </div>
+  <script src="lunar-lib.js"></script>
+  <script src="lunar.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

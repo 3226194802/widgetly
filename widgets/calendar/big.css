@@ -1,0 +1,37 @@
+/* 日历·墨滴月历 —— 大正方形 285×285：宣纸水墨 + 朱砂墨滴"今天" */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../clock/Montserrat-Variable.ttf') format('truetype'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 800; font-display: swap; src: url('../clock/Nunito-ExtraBold.woff2') format('woff2'); }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+.card {
+  position: absolute; inset: 0; border-radius: 30px; border: 1px solid rgba(255,255,255,0.5);
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);    /* 实时模糊 */
+  backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);     /* 只内阴影 */
+}
+.glass { display: none; }
+/* 宣纸：米白 + 纤维纹理 + 淡墨晕染角 */
+.bg {
+  position: absolute; inset: 0; opacity: var(--veil-opacity, 0.2);
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(255,255,255,0.65) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 8% 96%, rgba(0,0,0,0.05) 0%, transparent 55%),
+    linear-gradient(170deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 92%, #cfc4ae) 100%);
+}
+.bg::after { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(115deg, rgba(0,0,0,0.012) 0 1px, transparent 1px 3px); opacity: 0.6; }
+.content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 16px 14px 14px; }
+.top { position: relative; flex: none; display: flex; align-items: baseline; gap: 10px; padding: 0 6px 10px; }
+/* 大日期：底层墨晕柔光 + 墨色实心数字 */
+.day-halo { position: absolute; left: -6px; bottom: -4px; width: 92px; height: 92px; border-radius: 50%; background: radial-gradient(circle, rgba(0,0,0,0.10) 0%, transparent 65%); filter: blur(4px); }
+.day { position: relative; font-family: 'Nunito', '幼圆', 'YouYuan', 'Montserrat', sans-serif; font-weight: 800; font-size: 78px; line-height: 1; color: var(--text); letter-spacing: -1px; }
+.sub { font-size: 12px; font-weight: 600; color: var(--text-dim); letter-spacing: 1px; white-space: nowrap; }
+.grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(6, 1fr); gap: 3px; min-height: 0; }
+.cell { position: relative; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+.cell .num { position: relative; z-index: 2; font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 11px; color: var(--text); opacity: 0.82; }
+.cell.other .num { opacity: 0.3; }
+.cell.wk .num { color: var(--accent); opacity: 0.75; }
+/* 今天 = 朱砂墨滴：底层晕染大圆 + 上层墨滴实心 + 白字 */
+.cell.today::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; background: var(--accent-glow); filter: blur(5px); }
+.cell.today::after { content: ''; position: absolute; inset: 14%; border-radius: 50% 46% 52% 48% / 48% 52% 46% 54%; background: var(--accent); box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2), 0 2px 6px rgba(0,0,0,0.25); }
+.cell.today .num { color: #ffffff; font-weight: 800; opacity: 1; }

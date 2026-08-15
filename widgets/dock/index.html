@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>沉浸文件夹</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="card">
+    <!-- 实时毛玻璃罩层（backdrop-filter 实时模糊 + 半透明白罩） -->
+    <div class="veil"></div>
+
+    <!-- 标题栏（占位 14px） -->
+    <div id="titlebar"></div>
+
+    <!-- 网格 -->
+    <div id="grid"><!-- JS 渲染 --></div>
+
+    <!-- 背景透明度弹出面板（右键 → 背景透明度…） -->
+    <div id="opPanel" hidden>
+      <span class="op-label">背景透明度</span>
+      <div class="op-controls">
+        <div class="op-slider" id="opSlider">
+          <div class="op-fill" id="opFill"></div>
+          <div class="op-thumb" id="opThumb"></div>
+        </div>
+        <span class="op-val" id="opVal">28%</span>
+      </div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

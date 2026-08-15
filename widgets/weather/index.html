@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>天气</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="head">
+      <span class="city" id="city">—</span>
+      <span class="refresh" id="btnRefresh" title="立即刷新">⟳</span>
+    </div>
+    <div class="body">
+      <div class="left">
+        <div class="main">
+          <span class="icon" id="icon">—</span>
+          <span class="temp" id="temp">—°</span>
+        </div>
+        <div class="subline">
+          <span class="desc" id="desc">—</span>
+          <span class="feels" id="feels"></span>
+        </div>
+      </div>
+      <div class="stats" id="stats">
+        <div class="st"><span class="k">最高</span><span class="v" id="stHi">—</span></div>
+        <div class="st"><span class="k">最低</span><span class="v" id="stLo">—</span></div>
+        <div class="st"><span class="k">湿度</span><span class="v" id="stHum">—</span></div>
+        <div class="st"><span class="k">风速</span><span class="v" id="stWind">—</span></div>
+      </div>
+    </div>
+    <div class="foot" id="foot">最后更新：<span id="updated">—</span></div>
+
+    <!-- 背景透明度面板 -->
+    <div class="op-panel" id="opPanel" hidden>
+      <span class="op-label">背景透明度</span>
+      <div class="op-slider" id="opSlider">
+        <div class="op-fill" id="opFill"></div>
+        <div class="op-thumb" id="opThumb"></div>
+      </div>
+      <span class="op-val" id="opVal">78%</span>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>

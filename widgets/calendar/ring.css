@@ -1,0 +1,57 @@
+/* 日历·周环 —— 中正方形 270×280：薰衣草紫渐变 + 环形周视图（7 个星期圆点围环，中央大日期） */
+@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../clock/Montserrat-Variable.ttf') format('truetype'); }
+@font-face { font-family: 'Nunito'; font-style: normal; font-weight: 800; font-display: swap; src: url('../clock/Nunito-ExtraBold.woff2') format('woff2'); }
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+.card {
+  position: absolute; inset: 0; border-radius: 26px; border: 1px solid rgba(255,255,255,0.55);
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);   /* 实时模糊 */
+  backdrop-filter: blur(14px) saturate(1.15);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);     /* 只内阴影 */
+}
+.glass { display: none; }
+.bg {
+  position: absolute; inset: 0; opacity: var(--veil-opacity, 0.2);
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 38%, rgba(255,255,255,0.5) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 70% at 88% 96%, var(--accent-dim) 0%, transparent 55%),
+    linear-gradient(165deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, #b7a8d8) 100%);
+}
+.content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; padding: 14px 12px 10px; }
+.head { flex: none; font-size: 11px; font-weight: 700; color: var(--text-dim); letter-spacing: 1.2px; padding-bottom: 4px; }
+.ring { position: relative; flex: 1; width: 100%; min-height: 0; }
+.center {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -52%);
+  display: flex; flex-direction: column; align-items: center; gap: 3px; z-index: 2;
+}
+/* 中央大日期：底层柔光 + 圆体实心数字（层次感） */
+.day-halo { position: absolute; left: 50%; top: 50%; width: 128px; height: 128px; margin: -74px 0 0 -64px; border-radius: 50%; background: var(--accent-glow); filter: blur(16px); }
+.day { position: relative; font-family: 'Nunito', '幼圆', 'YouYuan', 'Montserrat', sans-serif; font-weight: 800; font-size: 62px; line-height: 1; color: var(--text); }
+.meta { position: relative; font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.5px; }
+.lunar { position: relative; font-size: 10.5px; color: var(--text-dim); letter-spacing: 0.5px; }
+/* 7 个星期圆点环形排布（从顶部顺时针：一~日） */
+.dots { position: absolute; inset: 0; }
+.dot {
+  position: absolute; left: 50%; top: 50%;
+  width: 40px; height: 46px; margin: -20px 0 0 -20px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border-radius: 50% 50% 12px 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+.dot .dnum { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 13px; line-height: 1; color: var(--text); }
+.dot .dwd { font-size: 8px; color: var(--text-faint); line-height: 1; }
+.dot:nth-child(1) { transform: rotate(-90deg) translateY(-96px) rotate(90deg); }
+.dot:nth-child(2) { transform: rotate(-38.6deg) translateY(-96px) rotate(38.6deg); }
+.dot:nth-child(3) { transform: rotate(12.9deg) translateY(-96px) rotate(-12.9deg); }
+.dot:nth-child(4) { transform: rotate(64.3deg) translateY(-96px) rotate(-64.3deg); }
+.dot:nth-child(5) { transform: rotate(115.7deg) translateY(-96px) rotate(-115.7deg); }
+.dot:nth-child(6) { transform: rotate(167.1deg) translateY(-96px) rotate(-167.1deg); }
+.dot:nth-child(7) { transform: rotate(218.6deg) translateY(-96px) rotate(-218.6deg); }
+/* 今天：底层大柔光 + 上层 80% 透明灰调 + 实心点 + 白字（三层层次感） */
+.dot.today::before { content: ''; position: absolute; inset: -8px; border-radius: 50% 50% 14px 14px; background: var(--accent-glow); filter: blur(5px); z-index: -1; }
+.dot.today::after { content: ''; position: absolute; inset: 0; border-radius: 50% 50% 12px 12px; background: var(--accent-soft); z-index: -1; }
+.dot.today { background: var(--accent); border-color: transparent; }
+.dot.today .dnum { color: #ffffff; }
+.dot.today .dwd { color: rgba(255, 255, 255, 0.85); }

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>支持 Widgetly</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  .win {
+    position: absolute; inset: 8px;
+    border-radius: 18px;
+    background: rgba(252, 252, 253, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    animation: winIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes winIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
+  .title { font-size: 14px; font-weight: 800; color: #1d1d1f; }
+  .close { width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #888; cursor: pointer; -webkit-app-region: no-drag; }
+  .close:hover { background: rgba(0, 0, 0, 0.08); }
+  .qr-wrap {
+    width: 190px; height: 258px;   /* 收款码竖向卡片比例 */
+    margin: 0 auto;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .qr-tip { font-size: 12px; color: #999; text-align: center; padding: 12px; line-height: 1.7; }
+  .desc { font-size: 12px; color: #3a3a3c; text-align: center; line-height: 1.7; }
+  .desc b { color: #0a8f6a; }
+  .form-head { font-size: 12px; font-weight: 800; color: rgba(29, 29, 31, 0.55); }
+  input {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.12); border-radius: 9px;
+    font-size: 13px; color: #1d1d1f; background: #fff;
+    font-family: inherit; outline: none;
+  }
+  input:focus { border-color: #0a8f6a; }
+  .copy {
+    width: 100%; padding: 8px 0; border: 1px solid rgba(10, 143, 106, 0.5); border-radius: 9px;
+    background: rgba(10, 143, 106, 0.08); color: #0a8f6a;
+    font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .copy:hover { background: rgba(10, 143, 106, 0.14); }
+  .hint { font-size: 11px; color: rgba(29, 29, 31, 0.5); line-height: 1.6; text-align: center; }
+  .foot { display: flex; justify-content: center; }
+  .done { padding: 6px 24px; border: none; border-radius: 9px; background: rgba(0, 0, 0, 0.08); color: #1d1d1f; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .done:hover { background: rgba(0, 0, 0, 0.14); }
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head">
+      <span class="title">❤ 支持 Widgetly</span>
+      <span class="close" id="closeBtn" title="关闭">✕</span>
+    </div>
+    <div class="qr-wrap">
+      <img id="qrImg" alt="微信收款码">
+      <div class="qr-tip" id="qrTip" style="display:none;">请将微信收款码图片保存为<br>assets/donate-qr.png</div>
+    </div>
+    <div class="desc">微信<b>扫码赞赏</b>，支持继续开发</div>
+
+    <div class="form-head">捐赠信息（选填）</div>
+    <input id="nickInput" type="text" maxlength="30" placeholder="你的昵称（选填）">
+    <input id="msgInput" type="text" maxlength="100" placeholder="想对作者说的话（选填）">
+    <button class="copy" id="btnCopy">复制捐赠信息，发给作者</button>
+    <div class="hint">填好后点上方按钮，再把信息发到<br><b>QQ 3226194802</b> 或 <b>QQ群 1094843262</b> 即可</div>
+
+    <div class="foot">
+      <button class="done" id="doneBtn">关闭</button>
+    </div>
+  </div>
+  <script src="donate.js"></script>
+</body>
+</html>

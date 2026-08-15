@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AI 用量监控</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="card">
+    <!-- 毛玻璃罩层（菜单「毛玻璃效果」开启后显示）：实时 backdrop-filter 模糊 + 暖棕罩 -->
+    <div class="veil" id="veil"></div>
+
+    <!-- ① 顶部标题栏：左侧品牌图标+标题，右侧 刷新/设置/关闭 线性图标 -->
+    <div id="titlebar">
+      <div class="tb-left">
+        <svg class="logo" width="18" height="18" viewBox="0 0 20 20">
+          <defs>
+            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6aa7ff"/>
+              <stop offset="100%" stop-color="#a78bfa"/>
+            </linearGradient>
+          </defs>
+          <rect x="1.5" y="1.5" width="17" height="17" rx="5.5" fill="url(#logoGrad)"/>
+          <path d="M6.5 14.5V5.5M6.5 10h7M13.5 5.5v9" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        <span class="app-name"><span id="platformName">HERMES</span> <span class="app-sub">用量监控</span></span>
+      </div>
+      <div class="tb-right">
+        <button class="tb-btn" id="btnPlatform" title="切换 Agent 平台">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/><path d="M2 12h20M12 2c2.5 2.7 2.5 15.3 0 18M12 2c-2.5 2.7-2.5 15.3 0 18"/></svg>
+        </button>
+        <button class="tb-btn" id="btnRefresh" title="立即刷新">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.34 6.24"/><path d="M20 5v6h-6"/></svg>
+        </button>
+        <button class="tb-btn" id="btnSettings" title="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="tb-btn danger" id="btnClose" title="退出此组件">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ② 核心概览区：累计总 Token + 状态标识，下方 今日/本月 并排子卡片 -->
+    <div id="overview">
+      <div class="ov-head">
+        <span class="ov-label">累计总 Token</span>
+        <span class="status-badge" id="statusBadge"><i class="dot" id="statusDot"></i><span id="statusText">待机</span></span>
+      </div>
+      <div class="ov-num" id="totalNum">0</div>
+      <div class="ov-sub">累计费用 <b id="totalCost">$0</b> &nbsp;·&nbsp; <b id="totalCalls">0</b> 次调用</div>
+      <div class="ov-cards">
+        <div class="ov-card" id="todayCard">
+          <div class="oc-head"><span class="oc-label">今日消耗</span><span class="oc-val" id="todayNum">0</span></div>
+          <div class="oc-bar"><div class="oc-fill" id="todayFill"></div></div>
+          <div class="oc-cost" id="todayCost">$0</div>
+        </div>
+        <div class="ov-card" id="monthCard">
+          <div class="oc-head"><span class="oc-label">本月消耗</span><span class="oc-val" id="monthNum">0</span></div>
+          <div class="oc-bar"><div class="oc-fill" id="monthFill"></div></div>
+          <div class="oc-cost" id="monthCost">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 分项用量区：每模型一张用量卡片 -->
+    <div id="models">
+      <div class="sec-head">分项用量 <span class="sec-sub">按模型</span></div>
+      <div id="modelList"></div>
+    </div>
+
+    <!-- ④ 趋势图表区：近 7 日柱状图 -->
+    <div id="trendSec">
+      <div class="sec-head">近 7 日趋势 <span class="trend-total" id="trendTotal"></span></div>
+      <div id="chart"></div>
+    </div>
+
+    <!-- 底部状态 -->
+    <div id="footer">
+      <span id="recent">最近活动：--</span>
+      <span id="refresh">--:--:-- 更新</span>
+    </div>
+
+    <!-- 透明度弹出面板 -->
+    <div id="opPanel" hidden>
+      <span class="op-label">背景透明度</span>
+      <div class="op-controls">
+        <div class="op-slider" id="opSlider">
+          <div class="op-fill" id="opFill"></div>
+          <div class="op-thumb" id="opThumb"></div>
+        </div>
+        <span class="op-val" id="opVal">35%</span>
+      </div>
+    </div>
+  </div>
+  <div id="errBanner" hidden>⚠ 数据获取失败，等待重试…</div>
+  <script src="renderer.js"></script>
+</body>
+</html>
