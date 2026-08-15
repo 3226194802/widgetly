@@ -201,6 +201,17 @@ function bmpToPng(data) {
     for (let i = 0; i < pixelBytes; i += 4) {
       rgba[i] = raw[i + 2]; rgba[i + 1] = raw[i + 1]; rgba[i + 2] = raw[i]; rgba[i + 3] = raw[i + 3];
     }
+    // 自底向上 DIB（hRaw > 0）：缓冲行序从图像底部开始，必须垂直翻转，否则图标倒置
+    if (hRaw > 0) {
+      const row = w * 4;
+      const tmp = Buffer.alloc(row);
+      for (let y = 0; y < Math.floor(h / 2); y++) {
+        const y2 = h - 1 - y;
+        rgba.copy(tmp, 0, y * row, (y + 1) * row);
+        rgba.copy(rgba, y * row, y2 * row, (y2 + 1) * row);
+        tmp.copy(rgba, y2 * row);
+      }
+    }
     let alphaFull = true;
     for (let i = 3; i < pixelBytes; i += 4) { if (rgba[i] !== 255) { alphaFull = false; break; } }
     if (alphaFull) {
@@ -209,8 +220,10 @@ function bmpToPng(data) {
       const mask = data.subarray(maskOff, maskOff + maskRow * h);
       if (mask.length >= maskRow * h) {
         for (let y = 0; y < h; y++) {
+          // 掩码行序与 XOR 数据一致：自底向上时取对称行
+          const sy = hRaw > 0 ? (h - 1 - y) : y;
           for (let x = 0; x < w; x++) {
-            const byte = mask[y * maskRow + (x >> 3)];
+            const byte = mask[sy * maskRow + (x >> 3)];
             rgba[y * w * 4 + x * 4 + 3] = ((byte >> (7 - (x & 7))) & 1) ? 255 : 0;
           }
         }
