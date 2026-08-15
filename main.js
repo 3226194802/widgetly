@@ -27,6 +27,25 @@ const ICON_PATH = path.join(APP_DIR, 'assets', 'icon.png');   // 应用图标（
 
 app.disableHardwareAcceleration();
 
+// ============ 单实例锁 ============
+// 防止双击任务栏/再次启动导致第二实例读取同一配置、在相同位置重复创建组件（用户反馈"组件重叠"）。
+// 第二个实例启动时，直接聚焦已存在的管理器窗口。
+const gotSingleLock = app.requestSingleInstanceLock();
+if (!gotSingleLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    // 点击任务栏图标/再次启动：直接聚焦已存在的主界面（不再启动第二个实例导致组件重复）
+    if (managerWin && !managerWin.isDestroyed()) {
+      if (managerWin.isMinimized()) managerWin.restore();
+      managerWin.show();
+      managerWin.focus();
+    } else {
+      createManagerWindow();
+    }
+  });
+}
+
 // ============ 组件注册表 ============
 // 新组件 = 在 widgets/ 下加一个目录 + 在这里登记；dir 字段用于多尺寸共用同一实现目录
 // 注册顺序 = 主页排列顺序：按高度分组（行内高度相近、减少空余），超大组件（342×500/551）放到最后
@@ -328,11 +347,12 @@ let latestWallpaper = null;
 async function captureWallpaper() {
   try {
     const d = screen.getPrimaryDisplay();
-    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: Math.round(d.size.width), height: Math.round(d.size.height) } });
+    // 半分辨率截图即可（仅作毛玻璃背景，位置数学按比例换算），启动提速约 3 倍
+    const tw = Math.round(d.size.width / 2), th = Math.round(d.size.height / 2);
+    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: tw, height: th } });
     const img = sources[0].thumbnail;
-    const { width: w, height: h } = img.getSize();
     const jpeg = Buffer.from(img.toJPEG(80)).toString('base64');
-    latestWallpaper = { dataUrl: 'data:image/jpeg;base64,' + jpeg, w, h };
+    latestWallpaper = { dataUrl: 'data:image/jpeg;base64,' + jpeg, w: img.getSize().width, h: img.getSize().height };
   } catch (e) { console.log('wallpaper err:', e.message); }
 }
 function wallpaperPos(x, y) {
@@ -383,6 +403,8 @@ function expectedSize(instance) {
 const dragTimers = new Map();       // webContents.id -> timer
 const dragSizes = new Map();        // webContents.id -> { w, h } 拖动锚定尺寸
 const lastDragStart = new Map();    // webContents.id -> 时间戳
+const dragCss = new Map();          // webContents.id -> {key, active} 拖动期间关闭毛玻璃
+const dragCssPending = new Set();   // webContents.id 正在等待 insertCSS 返回
 ipcMain.on('drag-start', (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   if (!win || win.isDestroyed()) return;
@@ -395,6 +417,19 @@ ipcMain.on('drag-start', (e) => {
   const since = lastDragStart.has(id) ? (now - lastDragStart.get(id)) : -1;
   if (since >= 0 && since < 450) { logDrag(`start BLOCKED(双击防抖 ${since}ms) id=${id}`); return; }
   lastDragStart.set(id, now);
+  // 拖动期间关闭 backdrop-filter：软件渲染下拖动时实时重算模糊是卡死/闪退主因
+  if (!dragCss.has(id) && !dragCssPending.has(id)) {
+    dragCssPending.add(id);
+    win.webContents.insertCSS('*{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}').then((key) => {
+      dragCssPending.delete(id);
+      dragCss.set(id, { key, active: dragTimers.has(id) });
+      // 若插入完成时拖动已结束，立即移除
+      if (!dragTimers.has(id)) {
+        dragCss.delete(id);
+        try { win.webContents.removeInsertedCSS(key); } catch (_) {}
+      }
+    }).catch(() => { dragCssPending.delete(id); });
+  }
   const exp = expectedSize(inst);
   const [wx, wy] = win.getPosition();
   const [gw, gh] = win.getSize();
@@ -428,6 +463,12 @@ ipcMain.on('drag-end', (e) => {
   if (!win) return;
   const id = win.webContents.id;
   if (dragTimers.has(id)) { clearInterval(dragTimers.get(id)); dragTimers.delete(id); }
+  // 拖动结束：恢复毛玻璃
+  if (dragCss.has(id)) {
+    const { key } = dragCss.get(id);
+    dragCss.delete(id);
+    try { win.webContents.removeInsertedCSS(key); } catch (_) {}
+  }
   // 无条件恢复应然尺寸：透明窗口交互中会自行漂移 +1~2px，结束后强制 setBounds 到应然值
   const exp = expectedSize(findInstanceByWin(win));
   const snap = dragSizes.get(id);

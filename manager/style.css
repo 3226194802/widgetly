@@ -39,8 +39,8 @@ html, body {
 .topbar,
 .sidebar {
   position: relative;
-  -webkit-backdrop-filter: blur(var(--nav-blur, 24px)) saturate(1.25);
-  backdrop-filter: blur(var(--nav-blur, 24px)) saturate(1.25);
+  -webkit-backdrop-filter: blur(var(--nav-blur, 12px));
+  backdrop-filter: blur(var(--nav-blur, 12px));
 }
 .topbar::before,
 .sidebar::before {
@@ -64,6 +64,12 @@ html, body {
 }
 .topbar > *,
 .sidebar > * { position: relative; z-index: 1; }
+/* 拖动期间临时关闭毛玻璃：软件渲染下拖动时实时重算模糊会卡死窗口（关键性能修复） */
+html.dragging .topbar,
+html.dragging .sidebar {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 @keyframes appIn {
   from { transform: scale(0.94) translateY(14px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }

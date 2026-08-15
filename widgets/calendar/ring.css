@@ -6,8 +6,8 @@ html, body { width: 100%; height: 100%; background: transparent; overflow: hidde
 .card {
   position: absolute; inset: 0; border-radius: 26px; border: 1px solid rgba(255,255,255,0.55);
   overflow: hidden;
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);   /* 实时模糊 */
-  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(8px);   /* 实时模糊 */
+  backdrop-filter: blur(8px);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);     /* 只内阴影 */
 }
 .glass { display: none; }
@@ -26,7 +26,7 @@ html, body { width: 100%; height: 100%; background: transparent; overflow: hidde
   display: flex; flex-direction: column; align-items: center; gap: 3px; z-index: 2;
 }
 /* 中央大日期：底层柔光 + 圆体实心数字（层次感） */
-.day-halo { position: absolute; left: 50%; top: 50%; width: 128px; height: 128px; margin: -74px 0 0 -64px; border-radius: 50%; background: var(--accent-glow); filter: blur(16px); }
+.day-halo { position: absolute; left: 50%; top: 50%; width: 128px; height: 128px; margin: -74px 0 0 -64px; border-radius: 50%; background: var(--accent-glow); filter: blur(8px); }
 .day { position: relative; font-family: 'Nunito', '幼圆', 'YouYuan', 'Montserrat', sans-serif; font-weight: 800; font-size: 62px; line-height: 1; color: var(--text); }
 .meta { position: relative; font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.5px; }
 .lunar { position: relative; font-size: 10.5px; color: var(--text-dim); letter-spacing: 0.5px; }

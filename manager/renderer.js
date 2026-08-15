@@ -55,6 +55,7 @@ function makeItem(w) {
   const frame = document.createElement('iframe');
   frame.className = 'frame';
   frame.setAttribute('scrolling', 'no');
+  frame.setAttribute('loading', 'lazy');   // 懒加载：只加载视口附近的预览，大幅降低启动开销
   frame.style.width = (w.w || 300) + 'px';
   frame.style.height = (w.h || 150) + 'px';
   item._frame = frame;
@@ -188,6 +189,28 @@ document.getElementById('btnSettings').addEventListener('click', () => ipcRender
 document.getElementById('btnClose').addEventListener('click', () => ipcRenderer.send('manager-close'));
 document.getElementById('btnQuit').addEventListener('click', () => ipcRenderer.send('quit-app'));
 
+// ---------- 拖动期间关闭毛玻璃（软件渲染下实时模糊会让拖动卡死） ----------
+const topbar = document.querySelector('.topbar');
+let dragOffTimer = null;
+function setDragging(on) {
+  document.documentElement.classList.toggle('dragging', on);
+}
+topbar.addEventListener('mousedown', (e) => {
+  // 按钮/滑杆不触发拖动（它们有 no-drag 区，但 mousedown 仍会冒泡到这里，排除掉）
+  if (e.target.closest('.tb-btn, .opacity-ctl')) return;
+  setDragging(true);
+  if (dragOffTimer) clearTimeout(dragOffTimer);
+  dragOffTimer = setTimeout(() => setDragging(false), 3000);   // 保险：3 秒后恢复
+});
+window.addEventListener('mouseup', () => {
+  if (dragOffTimer) clearTimeout(dragOffTimer);
+  setDragging(false);
+});
+window.addEventListener('blur', () => {
+  if (dragOffTimer) clearTimeout(dragOffTimer);
+  setDragging(false);
+});
+
 // 搜索
 searchInput.addEventListener('input', () => {
   searchQuery = searchInput.value.trim();
@@ -205,8 +228,8 @@ let appAlpha = 0.5;   // 透明度（0=不透明，1=全透明）
 function paintOpacity() {
   const pct = Math.round(appAlpha * 100);
   document.documentElement.style.setProperty('--nav-a', String(1 - appAlpha));
-  // 100% 时降低模糊强度（24px → 8px），让桌面更透、透明度更高
-  document.documentElement.style.setProperty('--nav-blur', Math.round(24 * (1 - appAlpha) + 8 * appAlpha) + 'px');
+  // 100% 时降低模糊强度（12px → 6px），让桌面更透、透明度更高
+  document.documentElement.style.setProperty('--nav-blur', Math.round(12 * (1 - appAlpha) + 6 * appAlpha) + 'px');
   opFill.style.width = pct + '%';
   opThumb.style.left = pct + '%';
   opVal.textContent = pct + '%';
@@ -250,8 +273,8 @@ document.addEventListener('mouseup', () => {
     item.style.animationDelay = `${30 + i * 35}ms`;
     itemCache[w.id] = item;
     grid.appendChild(item);
-    // 快速错峰加载预览（间隔 120ms，兼顾并行崩溃风险与加载速度）
-    setTimeout(() => loadFrame(item._frame, w), 80 + i * 120);
+    // loading=lazy：Chromium 自动只加载视口内 iframe，不再一次性加载全部预览
+    setTimeout(() => loadFrame(item._frame, w), 60 + i * 90);
   });
   applyFilter();
 })();

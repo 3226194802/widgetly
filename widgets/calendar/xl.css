@@ -6,8 +6,8 @@ html, body { width: 100%; height: 100%; background: transparent; overflow: hidde
 .card {
   position: absolute; inset: 0; border-radius: 30px; border: 1px solid rgba(255,255,255,0.16);
   overflow: hidden;
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);   /* 实时毛玻璃 */
-  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px);   /* 实时毛玻璃 */
+  backdrop-filter: blur(10px);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);     /* 只内阴影 */
 }
 .glass { display: none; }
@@ -20,7 +20,7 @@ html, body { width: 100%; height: 100%; background: transparent; overflow: hidde
 }
 .content { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; padding: 18px 16px 14px; }
 .top { position: relative; flex: none; display: flex; align-items: center; gap: 14px; padding-bottom: 12px; }
-.day-halo { position: absolute; left: -4px; top: -8px; width: 96px; height: 96px; border-radius: 50%; background: var(--accent-glow); filter: blur(14px); }
+.day-halo { position: absolute; left: -4px; top: -8px; width: 96px; height: 96px; border-radius: 50%; background: var(--accent-glow); filter: blur(8px); }
 .day { position: relative; font-family: 'Nunito', '幼圆', 'YouYuan', 'Montserrat', sans-serif; font-weight: 800; font-size: 68px; line-height: 1; color: #ffffff; text-shadow: 0 4px 20px rgba(0,0,0,0.4); }
 .meta { flex: 1; min-width: 0; font-size: 12px; color: var(--text-dim); letter-spacing: 0.4px; line-height: 1.7; }
 .dow-row { flex: none; display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; padding-bottom: 6px; }

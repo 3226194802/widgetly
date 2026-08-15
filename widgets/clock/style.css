@@ -60,8 +60,8 @@ html[data-theme="dark"] {
   border: 1px solid rgba(255,255,255,0.15); /* 很淡的白色透明边缘（玻璃拟态） */
   outline: none;
   overflow: hidden; /* 裁掉模糊层溢出边缘 */
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   box-shadow:
     inset 0 0 26px rgba(185, 220, 255, 0.13),
     inset 0 0 6px rgba(255, 255, 255, 0.14);
@@ -86,7 +86,7 @@ html[data-theme="dark"] .card {
   border-radius: inherit;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  filter: blur(26px) saturate(1.25) brightness(1.06);
+  filter: blur(8px) brightness(1.06);
 }
 /* 半透明罩：多层背景——右下暖黄光斑 + 左上浅白光晕 + 顶部微暗 + 白色基底（隐约透出模糊背景色彩） */
 .veil {
