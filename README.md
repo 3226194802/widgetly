@@ -1,66 +1,100 @@
-# Widgetly 组件坞
+# ✨ Widgetly 组件坞 —— 让 Windows 桌面变成你的专属控制台
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blueviolet.svg)](#)
+[![Download](https://img.shields.io/badge/Download-%E6%9C%80%E6%96%B0%E7%89%88-brightgreen.svg)](https://github.com/3226194802/widgetly-releases/releases)
 
-Windows 桌面小组件中心 —— 一个管理器 + 多种透明置顶小组件,极简 iOS 风格,本地运行、无需联网、无服务器。
+**一个管理器，管住你桌面上所有小组件。** 极简 iOS 风格、透明毛玻璃质感、本地运行零联网——把 Windows 桌面变成一块干净、好看、高效的信息面板。
 
-## 功能
+<p align="center">
+  <img src="./docs/screenshot-desktop.jpg" alt="Widgetly 桌面效果" width="80%">
+</p>
 
-- **组件坞(管理器)**:macOS 小组件画廊风格,深色毛玻璃 + 左侧分类导航 + 原始尺寸预览,支持拖动排序、搜索;
-- **灵动时钟**(标准/中/小):渐变数字、12/24 小时制、背景透明度、4 个数字独立配色;
-- **日历**系列:今日脉搏 / 胶囊日期 / 青柠 / 月相月历 / 周环 / 墨滴月历 / 全景,共 8 种形态,含农历;
-- **弹力文件夹**:应用/文件快捷收纳,8 种排列;
-- **图库**:本地文件夹轮播(无缝交叉淡化);
-- **今日待办** / **番茄时钟**:每日待办、番茄专注计时(重启续跑);
-- **AI 用量监控**:本地读取 Agent 桌面软件的 token 用量(Hermes / DeepSeek Harness);
-- **内存监控**:实时内存心电图 + 磁盘占用;
-- **DSH 启动器**:一键启动 DeepSeek Harness;
-- 每个组件都支持:右键菜单、锁定位置、置顶、透明度、退出,并持久化到本地配置。
+---
 
-## 运行要求
+## 🎯 它是什么
 
-- Windows 10 / 11(x64)
-- 无需安装 Python(仅 AI 用量监控的 Hermes 平台需要 Python)
+Widgetly（组件坞）是一个 Windows 桌面小组件中心：一个轻量的管理器窗口，加一批可以自由拖放、置顶、调透明度的桌面小组件。所有数据都在本地处理，不联网、无账号、无服务器，你的隐私完全掌握在自己手里。
 
-## 开发运行
+<p align="center">
+  <img src="./docs/screenshot-manager.jpg" alt="Widgetly 组件坞管理器" width="80%">
+</p>
 
-```bash
-npm install
-npm start
-```
+---
 
-## 打包发布
+## ⭐ 核心特色
 
-```bash
-# 生成安装版(NSIS .exe)+ 便携版(.exe),输出到 dist/
-npm run build
+| 特色 | 说明 |
+|---|---|
+| 🖥️ **DeepSeek Harness 一键启动** | 内置 DSH 启动器组件，配置路径后一键拉起，不用再翻文件夹 |
+| 📊 **Agent 平台用量监控** | 本地读取 Hermes / DeepSeek Harness / Claude Code / Codex 等 Agent 的 token 用量、成本、会话排行，随时掌握 AI 消耗 |
+| 🕐 **灵动时钟**（标准/中/小） | 渐变数字、12/24 小时制、4 个数字独立配色 |
+| 🌤️ **天气** | 实时天气 + 体感 + 湿度风速，自动定位城市 |
+| 📅 **日历**系列（8 种） | 今日脉搏 / 胶囊日期 / 青柠 / 月相月历 / 周环 / 墨滴月历 / 全景，含农历 |
+| 🗂️ **弹力文件夹** | 应用/文件快捷收纳，8 种排列布局 |
+| 🍅 **番茄时钟 + 今日待办** | 专注计时（重启续跑）、每日待办清单 |
+| 🖼️ **图库** | 本地图片无缝交叉淡化轮播 |
+| 📈 **系统/内存监控** | CPU/GPU/内存/磁盘实时环形进度 + 内存心电图 |
+| 🧩 **自由定制** | 每个组件都支持右键菜单、锁定、置顶、透明度，持久化到本地配置 |
 
-# 只生成便携版
-npm run build:portable
-```
+---
 
-## 目录结构
+## 📦 下载安装
+
+点击下面链接下载最新版安装包：
+
+👉 **[下载最新版本](https://github.com/3226194802/widgetly-releases/releases)**
+
+- `Widgetly-Setup-*.exe` —— 安装版（推荐，支持软件内自动更新）
+- `Widgetly-Portable-*.exe` —— 便携版（免安装，双击即用）
+
+> 软件内置**在线更新**：打开「设置 → 检查更新」即可一键升级到最新版，无需手动下载。
+
+---
+
+## 🚀 快速开始
+
+1. 下载并安装（或直接运行便携版）
+2. 右下角托盘会出现 Widgetly 图标，点击打开**组件坞**
+3. 在组件坞里点任意卡片，即可把它添加到桌面
+4. 右键组件 → 拖动位置、锁定、置顶、调透明度、退出
+
+---
+
+## 🛠️ 系统要求
+
+- Windows 10 / 11（x64）
+- 无需安装 Python（仅 AI 用量监控的 Hermes 平台需要）
+
+---
+
+## 📖 目录结构
 
 ```
 Widgetly/
-├── main.js              # 主进程(窗口管理/托盘/拖动/配置)
-├── manager/             # 组件坞(管理器)界面
-├── widgets/             # 各组件(clock/dock/gallery/todo/calendar/...)
-│   └── monitor/         # AI 用量监控(多 Agent 平台)
+├── main.js              # 主进程（窗口管理/托盘/拖动/配置）
+├── manager/             # 组件坞（管理器）界面
+├── widgets/             # 各组件（clock/dock/gallery/todo/calendar/...）
+│   └── monitor/         # AI 用量监控（多 Agent 平台）
 ├── assets/              # 应用图标
-└── config.json          # 用户实例配置
+└── docs/                # 截图等文档资源
 ```
 
-## 发布与在线更新
+---
 
-- 应用内置**在线更新**:用户在设置里点"检查更新"即可自动升级(基于 GitHub Releases,无需服务器);
-- 发布流程见 [PUBLISH_GUIDE.md](./PUBLISH_GUIDE.md)(零基础傻瓜教程,网页上点几下即可发新版);
-- 构建产物:`Widgetly-Setup-*.exe`(安装版,支持自动更新)、`Widgetly-Portable-*.exe`(便携版)、`latest.yml`(更新清单,发布时需一并上传)。
+## 🧑‍💻 开发者
 
-## 许可
+```bash
+npm install
+npm start          # 开发运行
+npm run build      # 打包安装版 + 便携版
+npm run build:msix # 打包微软商店 MSIX
+```
 
-本项目采用 [MIT License](./LICENSE) 开源。你可以自由使用、修改、商用、再分发，但需保留版权声明。
+技术栈：**Electron 40** · 原生 Node（零前端框架）· koffi（Win32 互操作）· backdrop-filter 实时毛玻璃
 
-## 技术栈
+---
 
-Electron 40 · 原生 Node(零前端框架)· koffi(Win32 互操作)· backdrop-filter 实时毛玻璃
+## 📄 许可
+
+本项目采用 [MIT License](./LICENSE) 开源。可自由使用、修改、商用、再分发，但需保留版权声明。

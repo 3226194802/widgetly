@@ -28,6 +28,11 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
+# 开发者内部文档（面向自己的发版/商店教程，不开源给用户看）
+PUBLISH_GUIDE.md
+STORE_CHECKLIST.md
+RELEASE.md
+
 # 编辑器
 .vscode/
 .idea/
