@@ -30,15 +30,38 @@ npm run build        # 生成 dist/Widgetly Setup x.x.x.exe(NSIS)+ 便携版
 
 ## 3. 制作 MSIX(商店用)
 
-推荐两条路二选一:
+**推荐：electron-builder 直接出 .appx（已配置并验证跑通）**
 
-**A. 微软 MSIX Packaging Tool(最简单)**
+```bash
+npm run build:msix        # 生成 dist/Widgetly-<版本>.appx
+```
+
+- 打包配置已就绪（`package.json` 的 `appx` 段）。
+- ⚠️ 提交商店前，必须把 `appx.identityName` 和 `appx.publisher` 改成你在合作伙伴中心「产品标识」页拿到的真实值（见下方「回填身份」）。
+
+**回填身份（必须）：**
+
+合作伙伴中心 → 你的应用 → 「产品标识」页，记下：
+- 包标识名称（Package/Identity Name）
+- 发布者 ID（Publisher ID）
+
+然后改 `package.json` 的 `appx` 段：
+
+```json
+"appx": {
+  "identityName": "【包标识名称】",
+  "publisher": "CN=【发布者ID】",
+  "publisherDisplayName": "Widgetly",
+  "displayName": "Widgetly 组件坞",
+  "languages": ["zh-CN", "en-US"]
+}
+```
+
+> 未签名提示「AppX is not signed」是正常的，商店会用它的证书签名。
+
+**备选：微软 MSIX Packaging Tool**
 1. 商店里免费下载 [MSIX Packaging Tool](https://learn.microsoft.com/windows/msix/packaging-tool/)。
 2. 用它对 `dist/` 里的 NSIS 安装包打包成 `.msix`。
-3. 按向导填:包名、发布者(你的 Publisher ID)、版本、图标(用 `assets/icon.png`)。
-
-**B. electron-builder 的 appx 目标**
-在 `package.json` 的 `build` 里加 `appx` 配置(需要你的 Publisher ID,可在合作伙伴中心 → 应用标识里查到)。
 
 ## 4. 提交商店
 
