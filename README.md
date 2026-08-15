@@ -6,6 +6,8 @@
 
 **一个管理器，管住你桌面上所有小组件。** 极简 iOS 风格、透明毛玻璃质感、本地运行零联网——把 Windows 桌面变成一块干净、好看、高效的信息面板。
 
+> 🇬🇧 [English README](#english)
+
 <p align="center">
   <img src="./docs/screenshot-desktop.jpg" alt="Widgetly 桌面效果" width="80%">
 </p>
@@ -98,3 +100,78 @@ npm run build:msix # 打包微软商店 MSIX
 ## 📄 许可
 
 本项目采用 [MIT License](./LICENSE) 开源。可自由使用、修改、商用、再分发，但需保留版权声明。
+
+---
+
+<a id="english"></a>
+
+# ✨ Widgetly — Turn Your Windows Desktop into a Personal Command Center
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blueviolet.svg)](#)
+[![Download](https://img.shields.io/badge/Download-Latest-brightgreen.svg)](https://github.com/3226194802/widgetly-releases/releases)
+
+**One manager for all your desktop widgets.** Minimal iOS-style design, frosted-glass transparency, fully offline — a clean, beautiful and efficient information panel right on your Windows desktop.
+
+<p align="center">
+  <img src="./docs/screenshot-desktop.jpg" alt="Widgetly on desktop" width="80%">
+</p>
+
+## 🎯 What is it?
+
+Widgetly is a **desktop widget center for Windows**: a lightweight manager window plus a collection of draggable, pinnable, opacity-adjustable desktop widgets. Everything runs 100% locally — no network, no account, no server. Your privacy stays in your hands.
+
+<p align="center">
+  <img src="./docs/screenshot-manager.jpg" alt="Widgetly manager" width="80%">
+</p>
+
+## ⭐ Key Features
+
+| Feature | Description |
+|---|---|
+| 🖥️ **DeepSeek Harness Launcher** | One-click launcher widget for DeepSeek Harness — no more digging through folders |
+| 📊 **Agent Usage Monitor** | Track token usage, cost and session rankings of Hermes / DeepSeek Harness / Claude Code / Codex locally |
+| 🕐 **Gradient Clocks** (S/M/L) | Gradient digits, 12/24-hour, per-digit colors |
+| 🌤️ **Weather** | Live weather + feels-like + humidity & wind |
+| 📅 **Calendar family** (8 variants) | Monthly / weekly ring / pill date / panoramic views, lunar calendar included |
+| 🗂️ **Spring Folder** | App/file shortcut dock with 8 layouts |
+| 🍅 **Pomodoro + Todo** | Focus timer (survives restart) + daily todo list |
+| 🖼️ **Gallery** | Local photo slideshow with cross-fade |
+| 📈 **System / Memory Monitor** | CPU/GPU/RAM/disk ring gauges + live RAM ECG |
+| 🧩 **Fully customizable** | Right-click menu on every widget: lock, pin, opacity, quit — all persisted locally |
+
+## 📦 Download
+
+👉 **[Download the latest release](https://github.com/3226194802/widgetly-releases/releases)**
+
+- `Widgetly-Setup-*.exe` — installer (recommended, supports in-app auto-update)
+- `Widgetly-Portable-*.exe` — portable (no installation needed)
+
+> Built-in **auto-updater**: open **Settings → Check for Updates** to upgrade in one click.
+
+## 🚀 Quick Start
+
+1. Download and install (or run the portable version)
+2. Click the Widgetly tray icon (bottom-right) to open the manager
+3. Click any card in the manager to add it to your desktop
+4. Right-click a widget to drag, lock, pin, adjust opacity, or quit
+
+## 🛠️ Requirements
+
+- Windows 10 / 11 (x64)
+- Python only needed for the Hermes platform of the AI usage monitor
+
+## 🧑‍💻 For Developers
+
+```bash
+npm install
+npm start          # run in development
+npm run build      # build installer + portable
+npm run build:msix # build Microsoft Store MSIX package
+```
+
+Tech stack: **Electron 40** · vanilla Node.js (no frontend framework) · koffi (Win32 interop) · backdrop-filter live frosted glass
+
+## 📄 License
+
+Open-sourced under the [MIT License](./LICENSE). Free to use, modify, redistribute and use commercially, as long as the copyright notice is retained.
