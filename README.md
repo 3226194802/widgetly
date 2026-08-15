@@ -1,5 +1,7 @@
 # Widgetly 组件坞
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 Windows 桌面小组件中心 —— 一个管理器 + 多种透明置顶小组件,极简 iOS 风格,本地运行、无需联网、无服务器。
 
 ## 功能
@@ -57,7 +59,7 @@ Widgetly/
 
 ## 许可
 
-当前为闭源(保留所有权利)。如需开源,建议使用 GPL-3.0 以保护"被改后再发布"的场景。
+本项目采用 [MIT License](./LICENSE) 开源。你可以自由使用、修改、商用、再分发，但需保留版权声明。
 
 ## 技术栈
 

@@ -95,7 +95,7 @@
 ## Agent 平台切换功能（AI 用量监控组件，2026-08-15）
 - 标题栏右上角新增 🌐 **平台切换按钮** → 打开平台选择窗口，列出主流 Agent 平台并显示安装检测状态（当前/已安装/未找到）。
 - **平台注册表** `widgets/monitor/agents.js`：每个平台 = `detect()`（本地路径检测）+ `fetch()`（读取本地用量数据，返回与 fetch_usage.py 同形状的监控数据）。
-- 已支持：**Hermes（桌面版）**（F:/app/hermes state.db，完整）、**DeepSeek Harness（网页版）**（~/.dsh/sessions/**/session.jsonl.zstd，完整）、**Claude Code（命令行）**（~/.claude/projects/**/history.jsonl，完整）、**Codex**（~/.codex/sessions + archived_sessions 的 token_count 事件，完整）、**Gemini CLI / 反重力 Antigravity**（通用 jsonl 扫描，尽力而为）、**Cursor / Trae / 华为云码道 / Copilot / Devin**（仅检测安装）。
+- 已支持：**Hermes（桌面版）**（`<hermes 目录>/state.db`，完整）、**DeepSeek Harness（网页版）**（~/.dsh/sessions/**/session.jsonl.zstd，完整）、**Claude Code（命令行）**（~/.claude/projects/**/history.jsonl，完整）、**Codex**（~/.codex/sessions + archived_sessions 的 token_count 事件，完整）、**Gemini CLI / 反重力 Antigravity**（通用 jsonl 扫描，尽力而为）、**Cursor / Trae / 华为云码道 / Copilot / Devin**（仅检测安装）。
 - **DeepSeek Harness 读取（用户 2026-08-15 修正数据错误）**：会话文件是**逐帧 zstd 压缩**（`session.jsonl.zstd`，每帧一个 JSONL 记录）。用 Node `zlib.zstdDecompressSync` 按 DSH 官方帧定位算法逐帧解码；`assistant/message`/`assistant/chunk`(usage) 事件含 `data.usage`（inputTokens/outputTokens/cacheReadTokens/reasoningTokens），**时间戳用事件自身 time**（今天用量准确），**模型来自 request/header.config.model**（V4 flash / V4 PRO 拆分）；每 (turn,step) 取最后一次 usage 防重复计数。**文件缓存**（mtime+size）使空闲轮询 10ms；Node 无 zstd 时回退 projcache。文件型平台轮询 15s（hermes 8s）。
 - **检测防误报（用户 2026-08-15 反馈）**：必须验证**真实可执行文件**（PATH/npm 全局里的 claude/codex/gemini 命令、Cursor.exe/Trae.exe 等），残留配置目录（~/.gemini、~/.antigravity 等）不算已安装。
 - 选择未安装的平台 → 组件显示「未找到此软件「X」」；已安装但无可读数据 → 「已安装「X」，但暂无使用记录」；切换后旧数据清空。

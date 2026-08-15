@@ -15,8 +15,8 @@ def _db_paths():
     if env:
         return [p.strip() for p in env.split(";") if p.strip()]
     return [
-        r"F:\app\hermes\state.db",              # 主库（桌面版全部会话）
-        r"F:\app\hermes\profiles\code\state.db",  # code profile（当前会话）
+        r"C:\path\to\hermes\state.db",              # 主库（桌面版全部会话）
+        r"C:\path\to\hermes\profiles\code\state.db",  # code profile（当前会话）
     ]
 
 

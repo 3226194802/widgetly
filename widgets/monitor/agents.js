@@ -296,8 +296,8 @@ function hermesDbCandidates() {
     root && path.join(root, 'profiles', 'code', 'state.db'),
     path.join(HOME, '.hermes', 'state.db'),
     path.join(HOME, '.hermes', 'profiles', 'code', 'state.db'),
-    'F:/app/hermes/state.db',
-    'F:/app/hermes/profiles/code/state.db',
+    'C:/hermes/state.db',
+    'C:/hermes/profiles/code/state.db',
   ].filter(Boolean);
 }
 

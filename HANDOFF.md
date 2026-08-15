@@ -15,7 +15,7 @@
 ## 二、目录结构
 
 ```
-F:\Widgetly\
+<项目目录>\
 ├── main.js                 # 主进程（核心，9000+ 字，已成型）
 ├── config.json             # 实例配置（用户当前只有 clock-1 一个实例）
 ├── manager\                # 管理器界面（已成型）
@@ -116,12 +116,12 @@ ipcRenderer.send('resize:' + instId, { width, height });
 
 ## 七、本机环境
 
-- **Electron**：`F:\app\hermes-agent\node_modules\electron\dist\electron.exe`（v40.10.2）
-- 运行：`"F:/app/hermes-agent/node_modules/electron/dist/electron.exe" F:/Widgetly`
+- **Electron**：`<path>\node_modules\electron\dist\electron.exe`（v40.10.2）
+- 运行：`electron.exe <项目目录>`
 - 系统：Windows 11 25H2 (build 26220)，150% DPI
-- 硬件加速：**必须 `app.disableHardwareAcceleration()`**（本机 GPU 合成有各种怪问题）
-- 调试：启动参数加 `--remote-debugging-port=9224`，用 CDP 验证（ws 库在 `F:/app/hermes-agent/node_modules/ws`）
-- 识图：`node "F:/app/hermes/bin/vision.js" "<图片路径>" "<问题>"`（qwen-vl-max，中文提问）
+- 硬件加速：**必须 `app.disableHardwareAcceleration()`**（GPU 合成有各种怪问题）
+- 调试：启动参数加 `--remote-debugging-port=9224`，用 CDP 验证（ws 库在 node_modules 里）
+- 识图：`node "<path>/vision.js" "<图片路径>" "<问题>"`（qwen-vl-max，中文提问）
 
 ## 八、已踩坑清单（全部实测，极其重要）
 
@@ -163,7 +163,7 @@ ipcRenderer.send('resize:' + instId, { width, height });
    - renderer 按第六节模板适配（instId、cfg 通道、resize 通道）
 2. **迁移 monitor 到 widgets/monitor**：
    - state.db 读取逻辑 → 组件适配层（数据推送 IPC）
-   - 注意 db 路径：`F:\app\hermes\profiles\code\state.db`（session_model_usage 表）
+   - 注意 db 路径：`<hermes 目录>\profiles\code\state.db`（session_model_usage 表）
 3. **全流程测试**：管理器添加/删除/切换三组件；多实例并存
 4. **阶段 2**（动效打磨）：添加组件时"管理器卡片弹跳 + 桌面窗口 pop-in 联动"动画
 5. **阶段 3**：多实例管理 UI、拖拽排序、组件设置面板、深/浅色主题
@@ -174,4 +174,4 @@ ipcRenderer.send('resize:' + instId, { width, height });
 - config.json 里只有 `clock-1` 一个实例（用户正式使用的，位置 977,200）
 - dock/monitor 的 widgets 目录是"🚧 迁移中"占位页（点添加会显示占位）
 - 管理器添加时钟实例已验证：数字大小正常（默认配置合并修复）、右键菜单正常（activate 修复）
-- 拖动功能：renderer 逻辑完整 + main 共享引擎已注册；若用户再报"拖不动"，读 `F:\Widgetly\widgetly-debug.log` 定位（日志通道已埋好）
+- 拖动功能：renderer 逻辑完整 + main 共享引擎已注册；若用户再报"拖不动"，读 `<项目目录>\widgetly-debug.log` 定位（日志通道已埋好）

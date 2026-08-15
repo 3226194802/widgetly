@@ -14,13 +14,13 @@
 
 1. 打开 https://desktop.github.com ,下载并安装 **GitHub Desktop**,登录你的账号;
 2. 打开 GitHub Desktop → 菜单 **File → Add local repository...**;
-3. 路径选 `F:\Widgetly` → 如果提示 "This directory does not appear to be a Git repository",点 **create a repository**;
+3. 路径选 `<项目目录>` → 如果提示 "This directory does not appear to be a Git repository",点 **create a repository**;
 4. 名称填 `widgetly` → **Create repository**;
 5. 点右上角 **Publish repository** → **取消勾选 "Keep this code private"**(公开仓库构建免费)→ **Publish repository**。
 
 ## 三、第一次:改一处配置(约 1 分钟)
 
-1. 用记事本打开 `F:\Widgetly\package.json`;
+1. 用记事本打开 `<项目目录>\package.json`;
 2. 找到 `"owner": "YOUR_GITHUB_USERNAME"`;
 3. 把 `YOUR_GITHUB_USERNAME` 换成**第一步注册的用户名**(比如 `xiaowang`),保存;
 4. 回到 GitHub Desktop,看到 package.json 有改动 → 左下角填个说明(如"改配置")→ 点 **Commit to main** → 点 **Push origin**。
