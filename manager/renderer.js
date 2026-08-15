@@ -68,7 +68,6 @@ function makeItem(w) {
   const frame = document.createElement('iframe');
   frame.className = 'frame';
   frame.setAttribute('scrolling', 'no');
-  frame.setAttribute('loading', 'lazy');   // 懒加载：只加载视口附近的预览，大幅降低启动开销
   frame.style.width = (w.w || 300) + 'px';
   frame.style.height = (w.h || 150) + 'px';
   scaler.appendChild(frame);
@@ -180,9 +179,58 @@ grid.addEventListener('drop', (e) => {
   if (dragId && t && t.wid !== dragId) insertWidget(dragId, t.wid, t.before);
 });
 
-function loadFrame(frame, w) {
-  if (!frame || frame.src) return;
-  frame.src = `../widgets/${w.dir || w.id}/${w.entry}?inst=preview&wid=${w.id}`;
+// ---------- 预览 iframe 并发受限加载：卡片外形先出，内容排队填入 ----------
+// 问题：一次性加载全部预览 iframe（每个是独立渲染进程）会造成 CPU 峰值卡顿。
+// 方案：视口内才进队列 + 同时最多 2 个加载 + 间隔 120ms；卡片有毛玻璃占位壳，
+//       外形/名字立即可见，iframe 加载完淡入覆盖，视觉体验无损失。
+const frameQueue = [];     // 待加载 {frame, url}
+let frameLoading = 0;      // 当前并发数
+const FRAME_CONCURRENCY = 2;
+const FRAME_GAP_MS = 120;
+
+function pumpFrameQueue() {
+  while (frameLoading < FRAME_CONCURRENCY && frameQueue.length) {
+    const { frame, item } = frameQueue.shift();
+    frameLoading++;
+    frame.addEventListener('load', () => {
+      item.classList.add('loaded');   // 淡入覆盖占位壳
+      frameLoading--;
+      pumpFrameQueue();
+    }, { once: true });
+    frame.addEventListener('error', () => {
+      frameLoading--;
+      pumpFrameQueue();
+    }, { once: true });
+    frame.src = frame.dataset.src;
+    frame.removeAttribute('data-src');
+  }
+}
+
+function loadFrame(item, w) {
+  const frame = item._frame;
+  if (!frame || frame.src || frame.dataset.src) return;
+  frame.dataset.src = `../widgets/${w.dir || w.id}/${w.entry}?inst=preview&wid=${w.id}`;
+  frameQueue.push({ frame, item });
+  pumpFrameQueue();
+}
+
+// 视口监听：滚动到视口内才真正加载（懒加载手动实现，比 loading=lazy 更可控）
+let frameIO = null;
+function observeFrames() {
+  if (frameIO || typeof IntersectionObserver !== 'function') return;
+  frameIO = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (en.isIntersecting) {
+        const item = en.target;
+        frameIO.unobserve(item);
+        const w = widgets.find((x) => x.id === item.dataset.wid);
+        if (w) loadFrame(item, w);
+      }
+    });
+  }, { root: grid, rootMargin: '200px 0px' });
+  Object.values(itemCache).forEach((item) => {
+    if (!item._frame.src && !item._frame.dataset.src) frameIO.observe(item);
+  });
 }
 
 function applyFilter() {
@@ -193,6 +241,13 @@ function applyFilter() {
       && (!searchQuery || w.name.toLowerCase().includes(searchQuery.toLowerCase()));
     item.style.display = show ? '' : 'none';
   });
+  // 显示状态变化后重新观察：视口内可见卡片由 IntersectionObserver 触发排队加载
+  if (frameIO) {
+    Object.values(itemCache).forEach((item) => {
+      const frame = item._frame;
+      if (item.style.display !== 'none' && !frame.src && !frame.dataset.src) frameIO.observe(item);
+    });
+  }
   const anyVisible = widgets.some((w) => itemCache[w.id] && itemCache[w.id].style.display !== 'none');
   let tip = document.getElementById('emptyTip');
   if (!anyVisible) {
@@ -298,8 +353,7 @@ document.addEventListener('mouseup', () => {
   categories = data.categories || [];
   widgets = data.widgets || [];
   renderNav();
-  // 创建所有卡片并立即错峰加载预览（打开即显示；间隔 350ms，避免 7 个 iframe 同时加载导致崩溃）
-  // 排列顺序由主进程 WIDGETS 注册顺序决定（已按美观原则优化）
+  // 创建所有卡片（占位壳立即可见），预览内容由视口监听 + 并发队列按需加载
   const ordered = widgets.slice();
   ordered.forEach((w, i) => {
     const item = makeItem(w);
@@ -308,8 +362,7 @@ document.addEventListener('mouseup', () => {
     grid.appendChild(item);
     if (ro) ro.observe(item);
     fitScaler(item, w);
-    // loading=lazy：Chromium 自动只加载视口内 iframe，不再一次性加载全部预览
-    setTimeout(() => loadFrame(item._frame, w), 60 + i * 90);
   });
   applyFilter();
+  observeFrames();   // 视口内的卡片开始排队加载预览
 })();

@@ -243,6 +243,14 @@ html.dragging .sidebar {
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
+/* 占位壳：预览 iframe 尚未加载完成时显示（毛玻璃空壳，避免卡片"闪现空白"） */
+.box::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border-radius: 18px;
+  background: linear-gradient(168deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.24));
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
 .scaler { position: relative; transform-origin: center center; }
 .frame {
   display: block;
@@ -251,7 +259,12 @@ html.dragging .sidebar {
   pointer-events: none;
   border-radius: 22px;
   overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.35s ease;
 }
+/* iframe 加载完成 → 淡入覆盖占位壳 */
+.item.loaded .frame { opacity: 1; }
+.item.loaded .box::before { display: none; }
 
 /* 名称（Open Runde，悬浮在组件下方） */
 .name {
