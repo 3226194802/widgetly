@@ -97,9 +97,9 @@ function setup({ instance, win, save }) {
 
   function resetPollTimer() {
     if (pollTimer) clearInterval(pollTimer);
-    // 文件型平台（需读日志/解压）放宽轮询，减少 IO 与窗口重绘（性能）
-    const slow = ['dsh', 'claude', 'codex', 'gemini', 'antigravity'].includes(platform.id);
-    pollTimer = setInterval(fetchUsage, slow ? 30000 : 15000);
+    // 全部平台均为本地文件/数据库型（读取开销集中，且数据变化不频繁），
+    // 统一 30s 轮询减少 IO 与窗口重绘；「立即刷新」可随时手动触发
+    pollTimer = setInterval(fetchUsage, 30000);
   }
 
   function openPlatform() {
@@ -107,7 +107,7 @@ function setup({ instance, win, save }) {
     const wa = screen.getPrimaryDisplay().workArea;
     const p = { x: wa.x + Math.max(0, Math.round((wa.width - 320) / 2)), y: wa.y + Math.max(0, Math.round((wa.height - 480) / 2)) };
     platformWin = new BrowserWindow({
-      width: 320, height: 480, x: p.x, y: p.y,
+      width: 320, height: 580, x: p.x, y: p.y,
       frame: false, transparent: true, resizable: false, maximizable: false, minimizable: false, fullscreenable: false,
       skipTaskbar: false, hasShadow: false, backgroundColor: '#00000000',
       webPreferences: { nodeIntegration: true, contextIsolation: false },

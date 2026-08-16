@@ -1,8 +1,8 @@
 // 主流 Agent 平台注册表 —— 检测安装 + 读取本地用量数据
 // 数据来源（本地文件，无需网络/API）：
-//   Hermes/DSH: state.db（fetch_usage.py）
+//   Hermes/DSH: state.db（fetch_usage.py）/ ~/.dsh/sessions（zstd 增量解码）
 //   Claude Code: ~/.claude/projects/**/history.jsonl（total_cost_usd + usage tokens）
-//   Codex: ~/.codex/sessions/**/*.jsonl（rollout，payload.message.usage）
+//   Codex: ~/.codex/sessions/**/*.jsonl（rollout，payload.response/event_msg 的 usage）
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -304,6 +304,74 @@ function scanUsage(dir, cb) {
   else cb({ ok: false, error: 'no_data', hint: '已检测到安装，但未找到可读的本地用量数据' });
 }
 
+// 通用 jsonl 目录扫描（文件级缓存：mtime/size 未变的文件直接复用上次结果，30s 轮询零 IO；
+// 每 8 个文件让出一次事件循环，首次扫描大目录也不阻塞主进程）
+// extract(line) 返回 usage 记录或 null
+function createJsonlScanner(extract) {
+  const fileCache = new Map();   // file -> { size, mtimeMs, records }
+  return {
+    async scan(dir) {
+      const files = [];
+      walkFiles(dir, (n) => n.endsWith('.jsonl'), files);
+      const records = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        let st;
+        try { st = fs.statSync(f); } catch (_) { continue; }
+        const c = fileCache.get(f);
+        if (c && c.size === st.size && c.mtimeMs === st.mtimeMs) { records.push(...c.records); continue; }
+        const recs = [];
+        readJsonlLines(f, (line) => { const r = extract(line); if (r) recs.push(r); });
+        fileCache.set(f, { size: st.size, mtimeMs: st.mtimeMs, records: recs });
+        records.push(...recs);
+        if ((i & 7) === 7) await yieldTurn();
+      }
+      return records;
+    },
+  };
+}
+
+// Claude Code：~/.claude/projects/**/*.jsonl
+// assistant 行：message.model / message.usage(input_tokens, output_tokens, cache_read_input_tokens,
+// cache_creation_input_tokens) / total_cost_usd；timestamp 为 ISO 字符串（仅统计 assistant 行，
+// summary 行是对旧消息的摘要合并，计入会重复计算）
+const claudeScanner = createJsonlScanner((line) => {
+  if (!line || line.type !== 'assistant' || !line.message || !line.message.usage) return null;
+  const u = line.message.usage;
+  const ts = Date.parse(line.timestamp || '');
+  if (!ts || isNaN(ts)) return null;
+  return {
+    ts, model: line.message.model || 'claude',
+    input: u.input_tokens || 0, output: u.output_tokens || 0,
+    cacheRead: u.cache_read_input_tokens || 0, cacheWrite: u.cache_creation_input_tokens || 0,
+    reasoning: 0, cost: typeof line.total_cost_usd === 'number' ? line.total_cost_usd : 0,
+  };
+});
+
+// Codex：~/.codex/sessions/**/*.jsonl（rollout 文件）
+// usage 出现在 response_item 行（payload.response.usage）或 event_msg 行（payload.payload.usage）
+const codexScanner = createJsonlScanner((line) => {
+  if (!line) return null;
+  const pl = line.payload || {};
+  let usage = null, model = null;
+  if (pl.type === 'response_item' && pl.response) { usage = pl.response.usage || null; model = pl.response.model || null; }
+  if (pl.type === 'event_msg' && pl.payload) {
+    if (!usage && pl.payload.usage) usage = pl.payload.usage;
+    if (!model && pl.payload.model) model = pl.payload.model;
+  }
+  if (!usage) return null;
+  const ts = Date.parse(line.timestamp || '');
+  if (!ts || isNaN(ts)) return null;
+  return {
+    ts, model: model || 'codex',
+    input: usage.input_tokens || 0, output: usage.output_tokens || 0,
+    cacheRead: (usage.input_tokens_details && usage.input_tokens_details.cached_tokens) || usage.input_tokens_cache_read || 0,
+    cacheWrite: usage.input_tokens_cache_write || 0,
+    reasoning: (usage.output_tokens_details && usage.output_tokens_details.reasoning_tokens) || 0,
+    cost: 0,
+  };
+});
+
 // Hermes 数据库候选路径：HERMES_HOME 环境变量 → ~/.hermes → 本机常见安装位置
 function hermesDbCandidates() {
   const root = process.env.HERMES_HOME || null;
@@ -328,10 +396,17 @@ const AGENTS = [
       const child = spawn(process.env.PYTHON || 'python', [path.join(__dirname, 'fetch_usage.py')], {
         windowsHide: true, env: { ...process.env, PYTHONIOENCODING: 'utf-8', HERMES_DB_PATHS: hermesDbCandidates().join(';') },
       });
-      let out = '';
+      let out = '', done = false;
+      // 8 秒保险丝：杀软拦截等导致子进程挂起时，超时杀掉并释放 fetchBusy（否则轮询永久停摆）
+      const timer = setTimeout(() => {
+        try { child.kill(); } catch (_) {}
+        if (!done) { done = true; cb({ ok: false, error: 'timeout', hint: 'Python 读取超时（8 秒），可能被杀毒软件拦截' }); }
+      }, 8000);
       child.stdout.on('data', (d) => { out += d; });
-      child.on('error', () => cb({ ok: false, error: 'python 启动失败', hint: '需要安装 Python' }));
+      child.on('error', () => { if (!done) { done = true; clearTimeout(timer); cb({ ok: false, error: 'python 启动失败', hint: '需要安装 Python' }); } });
       child.on('close', () => {
+        if (done) return;
+        done = true; clearTimeout(timer);
         try { cb(JSON.parse(out.trim().split('\n').pop())); } catch (_) { cb({ ok: false, error: '数据解析失败' }); }
       });
     },
@@ -351,6 +426,38 @@ const AGENTS = [
         if (!records.length) records = fetchDshProjcache();
         if (records.length) cb(aggregate(records));
         else cb({ ok: false, error: 'no_data', hint: '已安装，但暂无使用记录（本地无会话数据）' });
+      })();
+    },
+  },
+  {
+    id: 'claude', name: 'Claude Code（命令行）', short: 'Claude Code', icon: '✳️', pricing: 'usage',
+    detect() {
+      const dir = path.join(HOME, '.claude', 'projects');
+      return exists(dir) ? { found: true, detail: dir } : { found: false, hint: '未找到 ~/.claude/projects（需安装并运行过 Claude Code CLI）' };
+    },
+    fetch(cb) {
+      (async () => {
+        try {
+          const records = await claudeScanner.scan(path.join(HOME, '.claude', 'projects'));
+          if (records.length) cb(aggregate(records));
+          else cb({ ok: false, error: 'no_data', hint: '已安装 Claude Code，但本地暂无会话用量记录' });
+        } catch (e) { cb({ ok: false, error: 'fetch_error', hint: String((e && e.message) || e) }); }
+      })();
+    },
+  },
+  {
+    id: 'codex', name: 'OpenAI Codex（命令行）', short: 'Codex', icon: '🤖', pricing: 'subscription',
+    detect() {
+      const dir = path.join(HOME, '.codex', 'sessions');
+      return exists(dir) ? { found: true, detail: dir } : { found: false, hint: '未找到 ~/.codex/sessions（需安装并运行过 Codex CLI）' };
+    },
+    fetch(cb) {
+      (async () => {
+        try {
+          const records = await codexScanner.scan(path.join(HOME, '.codex', 'sessions'));
+          if (records.length) cb(aggregate(records));
+          else cb({ ok: false, error: 'no_data', hint: '已安装 Codex，但本地暂无会话用量记录' });
+        } catch (e) { cb({ ok: false, error: 'fetch_error', hint: String((e && e.message) || e) }); }
       })();
     },
   },

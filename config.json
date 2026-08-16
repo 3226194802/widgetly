@@ -1,0 +1,423 @@
+{
+  "theme": "dark",
+  "autostart": true,
+  "autostartMethod": "registry",
+  "openManagerOnStart": true,
+  "managerOpacity": 0.10416603088378906,
+  "pinToDesktop": false,
+  "instances": [
+    {
+      "id": "dock-1786645126254",
+      "widgetId": "dock",
+      "x": 1409,
+      "y": 557,
+      "config": {
+        "bgOpacity": 1,
+        "layout": "4x3",
+        "pinned": false,
+        "locked": false,
+        "items": [
+          {
+            "path": "C:\\Users\\Public\\Desktop\\Google Chrome.lnk",
+            "name": "Google Chrom"
+          },
+          {
+            "path": "C:\\Users\\Public\\Desktop\\番茄ToDo.lnk",
+            "name": "番茄ToDo"
+          },
+          {
+            "path": "C:\\Users\\STAR\\Desktop\\DeepSeek Harness (1).lnk",
+            "name": "DeepSeek Har"
+          },
+          {
+            "path": "C:\\Users\\STAR\\Desktop\\Hermes.lnk",
+            "name": "Hermes"
+          },
+          {
+            "path": "C:\\Users\\Public\\Desktop\\微信.lnk",
+            "name": "微信"
+          },
+          {
+            "path": "C:\\Users\\Public\\Desktop\\Microsoft Edge.lnk",
+            "name": "Microsoft Ed"
+          },
+          {
+            "path": "C:\\Users\\STAR\\Desktop\\LegionFanControl.lnk",
+            "name": "LegionFanCon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "monitor-1786645139572",
+      "widgetId": "monitor",
+      "x": 5,
+      "y": 22,
+      "config": {
+        "bgOpacity": 0.72,
+        "pinned": false,
+        "locked": false,
+        "glass": false,
+        "appearance": {
+          "fontColor": "#f1e8d8",
+          "accentColor": "#6aa7ff",
+          "bgColor": "#3e3128"
+        },
+        "platform": "dsh"
+      }
+    },
+    {
+      "id": "clock-1786650271587",
+      "widgetId": "clock",
+      "x": 1408,
+      "y": 48,
+      "config": {
+        "hour12": false,
+        "theme": "dark",
+        "veilOpacity": 100,
+        "bgColor": null,
+        "digitColors": {}
+      }
+    },
+    {
+      "id": "galleryM-1786672284976",
+      "widgetId": "galleryM",
+      "x": 1402,
+      "y": 226,
+      "config": {
+        "folder": "F:\\A组件图片",
+        "duration": 8,
+        "order": "random"
+      }
+    },
+    {
+      "id": "todo-1786673323675",
+      "widgetId": "todo",
+      "x": 728,
+      "y": 40,
+      "config": {
+        "todos": {
+          "2026-08-14": [
+            {
+              "text": "背英语单词",
+              "done": false
+            },
+            {
+              "text": "有氧训练",
+              "done": false
+            }
+          ],
+          "2026-08-15": [
+            {
+              "text": "测试待办事项",
+              "done": false
+            },
+            {
+              "text": "背英语单词",
+              "done": false
+            },
+            {
+              "text": "测试待办事项",
+              "done": false
+            },
+            {
+              "text": "测试待办事项",
+              "done": false
+            }
+          ],
+          "*": [],
+          "2026-08-16": [
+            {
+              "text": "测试待办事项",
+              "done": false
+            },
+            {
+              "text": "测试待办事项",
+              "done": false
+            }
+          ],
+          "2026-08-17": [
+            {
+              "text": "测试待办事项",
+              "done": false
+            }
+          ],
+          "2026-08-18": [
+            {
+              "text": "测试待办事项",
+              "done": false
+            }
+          ]
+        },
+        "appearance": {
+          "bg": "#fcfcfc",
+          "bgOpacity": 0,
+          "fontColor": "#481414",
+          "fontSize": 16
+        },
+        "size": "medium",
+        "locked": false
+      }
+    },
+    {
+      "id": "clockM-1786706949412",
+      "widgetId": "clockM",
+      "x": 1102,
+      "y": 47,
+      "config": {
+        "hour12": false,
+        "theme": "auto",
+        "veilOpacity": 100,
+        "hourColor": "#ffffff",
+        "minuteColor": "#ffffff"
+      }
+    },
+    {
+      "id": "galleryS-1786711958468",
+      "widgetId": "galleryS",
+      "x": 1554,
+      "y": 395,
+      "config": {
+        "folder": "F:\\A组件图片",
+        "duration": 8,
+        "order": "random"
+      }
+    },
+    {
+      "id": "galleryS-1786711959176",
+      "widgetId": "galleryS",
+      "x": 1403,
+      "y": 394,
+      "config": {
+        "folder": "F:\\A组件图片",
+        "duration": 10,
+        "order": "random"
+      }
+    },
+    {
+      "id": "calendarBar-1786713294219",
+      "widgetId": "calendarBar",
+      "x": 730,
+      "y": 244,
+      "config": {
+        "veilOpacity": 0,
+        "bgColor": "#1c3a6e",
+        "textColor": "#ffffff",
+        "accentColor": "#57b7ff"
+      }
+    },
+    {
+      "id": "calendarSquare-1786713294692",
+      "widgetId": "calendarSquare",
+      "x": 353,
+      "y": 586,
+      "config": {
+        "veilOpacity": 0,
+        "bgColor": "#f7f1e3",
+        "textColor": "#4a3728",
+        "accentColor": "#d95a3a"
+      }
+    },
+    {
+      "id": "calendarBig-1786713295163",
+      "widgetId": "calendarBig",
+      "x": 31,
+      "y": 588,
+      "config": {
+        "veilOpacity": 0,
+        "bgColor": "#f5f1e8",
+        "textColor": "#2b2b2b",
+        "accentColor": "#c83e2a"
+      }
+    },
+    {
+      "id": "calendarXL-1786713638395",
+      "widgetId": "calendarXL",
+      "x": 361,
+      "y": 29,
+      "config": {
+        "veilOpacity": 100,
+        "bgColor": "#141a33",
+        "textColor": "#f2ede4",
+        "accentColor": "#7fd1b9"
+      }
+    },
+    {
+      "id": "calendarMint-1786717707889",
+      "widgetId": "calendarMint",
+      "x": 730,
+      "y": 415,
+      "config": {
+        "veilOpacity": 0,
+        "bgColor": "#d7efe2",
+        "textColor": "#20543f",
+        "accentColor": "#9ec3d9"
+      }
+    },
+    {
+      "id": "calendarMini-1786719632734",
+      "widgetId": "calendarMini",
+      "x": 881,
+      "y": 502,
+      "config": {}
+    },
+    {
+      "id": "clockS-1786719633387",
+      "widgetId": "clockS",
+      "x": 881,
+      "y": 420,
+      "config": {
+        "hour12": false,
+        "theme": "light",
+        "veilOpacity": 0
+      }
+    },
+    {
+      "id": "launcher-1786720908058",
+      "widgetId": "launcher",
+      "x": 641,
+      "y": 597,
+      "config": {
+        "dshPath": "F:\\app4\\deepseek-harness",
+        "port": 3080,
+        "browser": "default",
+        "apiKey": "",
+        "size": "medium",
+        "veilOpacity": 0,
+        "theme": "light",
+        "locked": false
+      }
+    },
+    {
+      "id": "pomodoro-1786724569803",
+      "widgetId": "pomodoro",
+      "x": 1105,
+      "y": 388,
+      "config": {
+        "tasks": [
+          {
+            "id": "t39698",
+            "text": "写周报",
+            "done": false,
+            "count": 0
+          },
+          {
+            "id": "t39699",
+            "text": "整理代码",
+            "done": true,
+            "count": 0
+          }
+        ],
+        "settings": {
+          "focusMin": 25,
+          "shortBreakMin": 5,
+          "longBreakMin": 15,
+          "longBreakEvery": 4,
+          "autoNext": false,
+          "sound": true
+        },
+        "pinned": false,
+        "locked": false,
+        "bgOpacity": 1,
+        "state": {
+          "phase": "idle",
+          "running": false,
+          "endAt": 0,
+          "round": 0,
+          "taskId": "t39698",
+          "remainMs": 0,
+          "totalMs": 1500000
+        },
+        "today": {
+          "key": "2026-8-15",
+          "count": 0
+        }
+      }
+    },
+    {
+      "id": "pomodoroBar-1786725151669",
+      "widgetId": "pomodoroBar",
+      "x": 1109,
+      "y": 227,
+      "config": {
+        "tasks": [
+          {
+            "id": "t25006",
+            "text": "晨间阅读",
+            "done": false,
+            "count": 1
+          },
+          {
+            "id": "t25007",
+            "text": "整理邮件",
+            "done": false,
+            "count": 0
+          }
+        ],
+        "settings": {
+          "focusMin": 25,
+          "shortBreakMin": 5,
+          "longBreakMin": 15,
+          "longBreakEvery": 4,
+          "autoNext": false,
+          "sound": true
+        },
+        "pinned": false,
+        "locked": false,
+        "bgOpacity": 1,
+        "state": {
+          "phase": "idle",
+          "running": false,
+          "endAt": 0,
+          "round": 1,
+          "taskId": "t25006",
+          "remainMs": 0,
+          "totalMs": 300000
+        },
+        "today": {
+          "key": "2026-8-15",
+          "count": 1
+        }
+      }
+    },
+    {
+      "id": "memory-1786730517987",
+      "widgetId": "memory",
+      "x": 807,
+      "y": 593,
+      "config": {
+        "appearance": {
+          "curveColor": "#ffd24a",
+          "barColor": "#41cfc4",
+          "fontColor": "#f2eee6",
+          "bgMode": "solid",
+          "bgColor": "#201c1a"
+        },
+        "pinned": false,
+        "locked": false
+      }
+    }
+  ],
+  "widgetOrder": [
+    "clock",
+    "clockM",
+    "dock",
+    "galleryM",
+    "calendarBar",
+    "pomodoroBar",
+    "todo",
+    "memory",
+    "galleryL",
+    "calendarSquare",
+    "calendarRing",
+    "calendarBig",
+    "pomodoro",
+    "calendarMint",
+    "launcher",
+    "galleryS",
+    "calendarXL",
+    "monitor",
+    "clockS",
+    "calendarMini"
+  ]
+}

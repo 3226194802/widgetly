@@ -128,7 +128,8 @@ function clearInsertIndicator() {
 // 计算插入位置：找鼠标最近的可见卡片，按鼠标在卡片左/右半边判断插到其前/后。
 // 空位（大卡片右侧/下方）会命中最近卡片 → 插到其后，从而把小卡片放进空位。
 function getInsertTarget(cx, cy) {
-  const cards = [...grid.querySelectorAll('.item')].filter((c) => c.style.display !== 'none' && c.dataset.wid !== dragId);
+  // 组合行内的卡片不参与排序（位置固定），也不作为插入目标
+  const cards = [...grid.querySelectorAll('.item')].filter((c) => c.style.display !== 'none' && c.dataset.wid !== dragId && !c.closest('.pair-row'));
   if (!cards.length) return null;
   let best = null, bestDist = Infinity;
   cards.forEach((c) => {
@@ -355,14 +356,37 @@ document.addEventListener('mouseup', () => {
   renderNav();
   // 创建所有卡片（占位壳立即可见），预览内容由视口监听 + 并发队列按需加载
   const ordered = widgets.slice();
+  // 组合行：AI 用量监控 + 日历·全景 独占一整行、左右并排（占满 6 列 × 4 行，位置固定不参与排序）
+  const PAIR_IDS = ['monitor', 'calendarXL'];
+  let pairRow = null;
   ordered.forEach((w, i) => {
     const item = makeItem(w);
     item.style.animationDelay = `${30 + i * 35}ms`;
     itemCache[w.id] = item;
-    grid.appendChild(item);
+    if (PAIR_IDS.includes(w.id)) {
+      item.style.gridColumn = '';   // 清除 3 列跨度，交给 .pair-row 平分宽度
+      item.style.gridRow = '';
+      item.draggable = false;
+      if (!pairRow) {
+        pairRow = document.createElement('div');
+        pairRow.className = 'pair-row';
+        grid.appendChild(pairRow);
+      }
+      pairRow.appendChild(item);
+    } else {
+      grid.appendChild(item);
+    }
     if (ro) ro.observe(item);
     fitScaler(item, w);
   });
+  // 固定左右顺序：AI 用量监控在左、日历·全景在右（与注册/自定义顺序无关）
+  if (pairRow) {
+    const mon = itemCache['monitor'], xl = itemCache['calendarXL'];
+    if (mon && xl) {
+      if (pairRow.firstChild !== mon) pairRow.insertBefore(mon, pairRow.firstChild);
+      if (pairRow.lastChild !== xl) pairRow.appendChild(xl);
+    }
+  }
   applyFilter();
   observeFrames();   // 视口内的卡片开始排队加载预览
 })();

@@ -85,7 +85,7 @@ const WIDGETS = {
   sysmonL: { id: 'sysmonL', name: '系统监测·大', icon: '🖥️', w: 285, h: 285, entry: 'index.html', dir: 'sysmon', category: 'tool' },
   // —— 超大（放最后）——
   calendarXL: { id: 'calendarXL', name: '日历·全景', icon: '🗓️', w: 342, h: 500, entry: 'xl.html', dir: 'calendar', category: 'calendar' },
-  monitor: { id: 'monitor', name: 'AI 用量监控（Hermes）', icon: '📊', w: 342, h: 551, entry: 'index.html', category: 'tool' },
+  monitor: { id: 'monitor', name: 'AI 用量监控', icon: '📊', w: 342, h: 551, entry: 'index.html', category: 'tool' },
 };
 // 左侧导航分类（全部 / 时钟 / 日历 / 效率工具 / 工具）—— icon 为内联 SVG 字符串
 const CATEGORIES = [

@@ -237,6 +237,21 @@ html.dragging .sidebar {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* 组合行：AI 用量监控 + 日历·全景 独占一整行、左右并排（6 列 × 4 行，位置固定） */
+.pair-row {
+  grid-column: 1 / -1;
+  grid-row: span 4;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+.pair-row .item {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+}
+
 /* 预览缩放容器：按格子尺寸等比缩放 iframe 内容 */
 .box {
   position: absolute; inset: 0;
@@ -273,9 +288,7 @@ html.dragging .sidebar {
   transform: translateX(-50%);
   padding: 2px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.88);   /* 去掉 6px 实时模糊：软件渲染下 20+ 名牌累计开销不小，纯色视觉无差 */
   font-family: 'Open Runde', -apple-system, 'PingFang SC', sans-serif;
   font-weight: 700;
   font-size: 12px;

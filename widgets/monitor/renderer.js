@@ -88,12 +88,15 @@ function render(data) {
     clearData();
     const err = data && data.error;
     const pname = data && data.platform ? data.platform.name : '该平台';
+    const hint = (data && data.hint) || (data && data.platform && data.platform.hint);
     if (err === 'not_found') {
-      $('errBanner').textContent = '未找到此软件「' + pname + '」' + ((data.hint || (data.platform && data.platform.hint)) ? '：' + (data.hint || (data.platform && data.platform.hint)) : '');
+      $('errBanner').textContent = '未找到此软件「' + pname + '」' + (hint ? '：' + hint : '');
     } else if (err === 'no_data') {
-      $('errBanner').textContent = '已安装「' + pname + '」，但暂无使用记录（本地无用量数据）';
+      $('errBanner').textContent = '「' + pname + '」' + (hint ? '：' + hint : '：暂无使用记录（本地无用量数据）');
+    } else if (err === 'timeout') {
+      $('errBanner').textContent = '⚠ ' + (hint || '读取超时，请稍后重试');
     } else {
-      $('errBanner').textContent = '⚠ 数据获取失败，等待重试…';
+      $('errBanner').textContent = hint ? '⚠ ' + hint : '⚠ 数据获取失败，等待重试…';
     }
     $('errBanner').hidden = false;
     $('statusBadge').classList.add('idle');

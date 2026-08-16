@@ -1,7 +1,7 @@
 {
   "name": "widgetly",
   "productName": "Widgetly",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Widgetly 组件坞 —— Windows 桌面小组件中心",
   "main": "main.js",
   "private": true,
