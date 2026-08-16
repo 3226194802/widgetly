@@ -7,3 +7,5 @@ dist/
 .up.json
 .up2.json
 widgetly-debug.log
+config.json
+LocalLow/
