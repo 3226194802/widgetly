@@ -306,22 +306,24 @@ function scanUsage(dir, cb) {
 
 // 通用 jsonl 目录扫描（文件级缓存：mtime/size 未变的文件直接复用上次结果，30s 轮询零 IO；
 // 每 8 个文件让出一次事件循环，首次扫描大目录也不阻塞主进程）
-// extract(line) 返回 usage 记录或 null
-function createJsonlScanner(extract) {
+// extract(line, ctx) 返回 usage 记录或 null；ctx 携带本次扫描的跨行状态（去重等）
+function createJsonlScanner(extract, onFileStart) {
   const fileCache = new Map();   // file -> { size, mtimeMs, records }
   return {
     async scan(dir) {
       const files = [];
       walkFiles(dir, (n) => n.endsWith('.jsonl'), files);
       const records = [];
+      const ctx = { seen: new Set() };
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
         let st;
         try { st = fs.statSync(f); } catch (_) { continue; }
         const c = fileCache.get(f);
         if (c && c.size === st.size && c.mtimeMs === st.mtimeMs) { records.push(...c.records); continue; }
+        if (onFileStart) onFileStart();
         const recs = [];
-        readJsonlLines(f, (line) => { const r = extract(line); if (r) recs.push(r); });
+        readJsonlLines(f, (line) => { const r = extract(line, ctx); if (r) recs.push(r); });
         fileCache.set(f, { size: st.size, mtimeMs: st.mtimeMs, records: recs });
         records.push(...recs);
         if ((i & 7) === 7) await yieldTurn();
@@ -333,10 +335,15 @@ function createJsonlScanner(extract) {
 
 // Claude Code：~/.claude/projects/**/*.jsonl
 // assistant 行：message.model / message.usage(input_tokens, output_tokens, cache_read_input_tokens,
-// cache_creation_input_tokens) / total_cost_usd；timestamp 为 ISO 字符串（仅统计 assistant 行，
-// summary 行是对旧消息的摘要合并，计入会重复计算）
-const claudeScanner = createJsonlScanner((line) => {
+// cache_creation_input_tokens) / timestamp（ISO 字符串）。实测 v2.1.x 有两个坑：
+//   1) 同一回复写两行（thinking 与 text 拆行、message.id 相同、usage 相同）→ 按 message.id 去重；
+//   2) 无 total_cost_usd 字段 → 费用显示为「—」（pricing: unknown）
+// summary 行是对旧消息的摘要合并，计入会重复计算，故仅统计 type==='assistant'
+const claudeScanner = createJsonlScanner((line, ctx) => {
   if (!line || line.type !== 'assistant' || !line.message || !line.message.usage) return null;
+  if (line.message.model === '<synthetic>') return null;   // Claude Code 内部占位，非真实模型
+  const mid = line.message.id;
+  if (mid) { if (ctx.seen.has(mid)) return null; ctx.seen.add(mid); }
   const u = line.message.usage;
   const ts = Date.parse(line.timestamp || '');
   if (!ts || isNaN(ts)) return null;
@@ -349,28 +356,54 @@ const claudeScanner = createJsonlScanner((line) => {
 });
 
 // Codex：~/.codex/sessions/**/*.jsonl（rollout 文件）
-// usage 出现在 response_item 行（payload.response.usage）或 event_msg 行（payload.payload.usage）
+// 实测新格式：token_count 事件 → info.last_token_usage 为增量（每个 rollout 文件独立计数，
+// 全部事件求和 = 真实用量；info.total_token_usage 是会话累计，求和会重复统计）。
+// 相邻重复事件（同一累计值被写两次）按 total_token_usage 去重。
+// 口径归一：Codex 的 input_tokens 已含 cached_input_tokens、output_tokens 已含
+// reasoning_output_tokens（与 DSH/Claude 的分列口径不同），拆开后与其它平台一致相加。
+// 兼容旧格式：response_item.response.usage / event_msg.payload.usage
+let codexModel = null, codexLastTotal = null;
 const codexScanner = createJsonlScanner((line) => {
   if (!line) return null;
   const pl = line.payload || {};
-  let usage = null, model = null;
-  if (pl.type === 'response_item' && pl.response) { usage = pl.response.usage || null; model = pl.response.model || null; }
-  if (pl.type === 'event_msg' && pl.payload) {
-    if (!usage && pl.payload.usage) usage = pl.payload.usage;
-    if (!model && pl.payload.model) model = pl.payload.model;
+  if (pl.response && pl.response.model) codexModel = pl.response.model;
+  if (pl.type === 'event_msg' && pl.payload && pl.payload.model) codexModel = pl.payload.model;
+  const norm = (u) => ({
+    ts: Date.parse(line.timestamp || ''),
+    model: codexModel || 'codex',
+    input: Math.max(0, (u.input_tokens || 0) - (u.cached_input_tokens || 0)),
+    output: Math.max(0, (u.output_tokens || 0) - (u.reasoning_output_tokens || 0)),
+    cacheRead: u.cached_input_tokens || 0,
+    cacheWrite: u.cache_write_input_tokens || 0,
+    reasoning: u.reasoning_output_tokens || 0,
+    cost: 0,
+  });
+  if (pl.type === 'token_count' && pl.info && pl.info.last_token_usage) {
+    const u = pl.info.last_token_usage;
+    const tot = pl.info.total_token_usage || {};
+    const key = [tot.input_tokens, tot.cached_input_tokens, tot.output_tokens, tot.reasoning_output_tokens].join(',');
+    if (key === codexLastTotal) return null;   // 重复事件
+    codexLastTotal = key;
+    const r = norm(u);
+    if (!r.ts || isNaN(r.ts)) return null;
+    return r;
   }
+  let usage = null;
+  if (pl.type === 'response_item' && pl.response && pl.response.usage) usage = pl.response.usage;
+  if (pl.type === 'event_msg' && pl.payload && pl.payload.usage) usage = pl.payload.usage;
   if (!usage) return null;
+  const cached = (usage.input_tokens_details && usage.input_tokens_details.cached_tokens) || usage.input_tokens_cache_read || 0;
+  const reasoning = (usage.output_tokens_details && usage.output_tokens_details.reasoning_tokens) || 0;
   const ts = Date.parse(line.timestamp || '');
   if (!ts || isNaN(ts)) return null;
   return {
-    ts, model: model || 'codex',
-    input: usage.input_tokens || 0, output: usage.output_tokens || 0,
-    cacheRead: (usage.input_tokens_details && usage.input_tokens_details.cached_tokens) || usage.input_tokens_cache_read || 0,
-    cacheWrite: usage.input_tokens_cache_write || 0,
-    reasoning: (usage.output_tokens_details && usage.output_tokens_details.reasoning_tokens) || 0,
-    cost: 0,
+    ts, model: codexModel || 'codex',
+    input: Math.max(0, (usage.input_tokens || 0) - cached),
+    output: Math.max(0, (usage.output_tokens || 0) - reasoning),
+    cacheRead: cached, cacheWrite: usage.input_tokens_cache_write || 0,
+    reasoning, cost: 0,
   };
-});
+}, () => { codexModel = null; codexLastTotal = null; });
 
 // Hermes 数据库候选路径：HERMES_HOME 环境变量 → ~/.hermes → 本机常见安装位置
 function hermesDbCandidates() {
@@ -430,7 +463,7 @@ const AGENTS = [
     },
   },
   {
-    id: 'claude', name: 'Claude Code（命令行）', short: 'Claude Code', icon: '✳️', pricing: 'usage',
+    id: 'claude', name: 'Claude Code（命令行）', short: 'Claude Code', icon: '✳️', pricing: 'unknown',
     detect() {
       const dir = path.join(HOME, '.claude', 'projects');
       return exists(dir) ? { found: true, detail: dir } : { found: false, hint: '未找到 ~/.claude/projects（需安装并运行过 Claude Code CLI）' };
