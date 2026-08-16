@@ -18,6 +18,7 @@ const zstdDecompressAsync = hasZstd ? require('util').promisify(zlib.zstdDecompr
 
 // ---------- DSH 会话解码（增量：按文件 mtime/size 缓存，仅解压追加的新帧；变化文件的活跃会话也几乎零开销） ----------
 const dshFileCache = new Map();
+const dshPending = new Map();   // file -> {offset, model, steps} 上次超预算未解完的续解状态
 // zstd 帧定位（DSH 官方算法移植：按帧头/块头扫描完整帧边界）
 // startOffset：从该字节偏移继续扫描（增量解码）；resumeAt：下一个可安全恢复的偏移。
 function scanZstdFrames(buffer, startOffset) {
@@ -101,6 +102,7 @@ async function decodeDshFileRangeAsync(file, startOffset, initialModel, initialS
     }
     if (usage && turn >= 0 && step >= 0) steps.set(turn + ':' + step, { usage, ts, model });
   };
+  const tStart = Date.now();
   for (let i = 0; i < frames.length; i++) {
     const f = frames[i];
     const out = zlib.zstdDecompressSync(b.subarray(f.start, f.end));
@@ -108,8 +110,14 @@ async function decodeDshFileRangeAsync(file, startOffset, initialModel, initialS
       if (!line.trim()) continue;
       try { push(JSON.parse(line)); } catch (_) {}
     }
-    // 全量解码时每 512 帧（约 25ms）让出事件循环，界面保持响应
-    if (base === 0 && (i & 511) === 0) await yieldTurn();
+    // 每 8 帧让出一次事件循环（全量+增量统一）：zstd 同步解压会占满 CPU，
+    // 必须高频让出，否则主进程拖动/右键菜单/托盘全部卡死（实测 20 分钟卡顿的根源）
+    if ((i & 7) === 7) await yieldTurn();
+    // 时间预算：单次解码超过 1.2 秒先暂停，剩余帧留下轮处理，避免长时间占用主进程
+    if ((i & 63) === 63 && Date.now() - tStart > 1200 && i + 1 < frames.length) {
+      try { fs.appendFileSync(path.join(HOME, '.dsh', 'widgetly-decode.log'), `[${new Date().toISOString()}] budget pause @ ${i}/${frames.length} of ${file}\n`); } catch (_) {}
+      return { records: null, resumeOffsetAbs: base + frames[i + 1].start, model, steps, partial: true };
+    }
   }
   const records = [];
   for (const { usage, ts, model: m } of steps.values()) {
@@ -131,20 +139,28 @@ async function fetchDshSessionsAsync() {
     let st;
     try { st = fs.statSync(f); } catch (_) { continue; }
     const cached = dshFileCache.get(f);
-    // 未变化 → 直接复用缓存（空闲轮询零开销）
-    if (cached && cached.size === st.size && cached.mtimeMs === st.mtimeMs) {
+    const pending = dshPending.get(f);
+    // 未变化且无待续解 → 直接复用缓存（空闲轮询零开销）
+    if (cached && cached.size === st.size && cached.mtimeMs === st.mtimeMs && !pending) {
       records.push(...cached.records);
       continue;
     }
-    // 变化了 → 增量解码：仅在文件变大时从缓存偏移续解，否则全量
+    // 变化了 → 增量解码：有 pending 续解状态优先；否则文件变大时从缓存偏移续解
     let from = 0, model = 'dsh', steps = new Map();
-    if (cached && st.size >= cached.size && cached.offset > 0) {
+    if (pending) { from = pending.offset; model = pending.model; steps = pending.steps; }
+    else if (cached && st.size >= cached.size && cached.offset > 0) {
       from = cached.offset;
       model = cached.model || 'dsh';
       steps = cached.steps || new Map();
       if (from > st.size) { from = 0; model = 'dsh'; steps = new Map(); }
     }
     const res = await decodeDshFileRangeAsync(f, from, model, steps);
+    if (res.partial) {
+      // 超时间预算：记录续解状态，下轮继续；本文件暂不出结果
+      dshPending.set(f, { offset: res.resumeOffsetAbs, model: res.model, steps: res.steps });
+      continue;
+    }
+    dshPending.delete(f);
     dshFileCache.set(f, {
       mtimeMs: st.mtimeMs, size: st.size,
       offset: res.nextOffset, model: res.model, steps: res.steps, records: res.records,
@@ -401,4 +417,4 @@ const AGENTS = [
   },
 ];
 
-module.exports = { AGENTS };
+module.exports = { AGENTS, hasPendingDsh: () => dshPending.size > 0 };

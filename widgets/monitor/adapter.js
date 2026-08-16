@@ -2,7 +2,7 @@
 // 多 Agent 平台（Hermes/Claude Code/Codex/…）检测与数据轮询 + 置顶/锁定/透明度 + 右键菜单；IPC 按实例隔离
 const { ipcMain, Menu, BrowserWindow, screen } = require('electron');
 const path = require('path');
-const { AGENTS } = require('./agents.js');
+const { AGENTS, hasPendingDsh } = require('./agents.js');
 
 const DEFAULTS = {
   bgOpacity: 1, pinned: false, locked: false, glass: false,
@@ -24,6 +24,8 @@ function setup({ instance, win, save }) {
     ? saved.bgOpacity : 0.66;
   let platform = AGENTS.find((a) => a.id === saved.platform) || AGENTS[0];
   let pollTimer = null;
+  let fetchBusy = false;
+  let resumeTimer = null;
 
   function persist() {
     instance.config = { bgOpacity, pinned, locked, glass, appearance, platform: platform.id };
@@ -55,22 +57,31 @@ function setup({ instance, win, save }) {
   }
 
   function fetchUsage() {
+    if (fetchBusy) return;   // 防重入：上一轮解码未完时不叠加新轮
+    fetchBusy = true;
     const agent = platform;
     const det = agent.detect();
     const pInfo = { id: agent.id, name: agent.name, short: agent.short, icon: agent.icon, pricing: agent.pricing };
     if (!det.found) {
+      fetchBusy = false;
       if (win && !win.isDestroyed()) {
         win.webContents.send('usage:' + instId, { ok: false, error: 'not_found', platform: { ...pInfo, found: false, hint: det.hint } });
       }
       return;
     }
     agent.fetch((data) => {
+      fetchBusy = false;
       if (!win || win.isDestroyed()) return;
       const base = { platform: { ...pInfo, found: true, detail: det.detail } };
       if (data && data.ok) {
         win.webContents.send('usage:' + instId, { ...data, ...base });
       } else {
         win.webContents.send('usage:' + instId, { ok: false, error: (data && data.error) || 'fetch_error', hint: (data && data.hint), ...base });
+      }
+      // 有未解完的会话数据（超时间预算暂停）→ 2 秒后快速续解，不等下一轮 30s 轮询
+      if (platform.id === 'dsh' && hasPendingDsh() && !fetchBusy) {
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => { if (win && !win.isDestroyed()) fetchUsage(); }, 2000);
       }
     });
   }
@@ -185,6 +196,7 @@ function setup({ instance, win, save }) {
 
   win.on('closed', () => {
     if (pollTimer) clearInterval(pollTimer);
+    if (resumeTimer) clearTimeout(resumeTimer);
     if (appearanceWin && !appearanceWin.isDestroyed()) appearanceWin.close();
     if (platformWin && !platformWin.isDestroyed()) platformWin.close();
   });

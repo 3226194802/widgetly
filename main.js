@@ -600,8 +600,8 @@ function createManagerWindow() {
     maximizable: false,
     fullscreenable: false,
     alwaysOnTop: false,
-    skipTaskbar: false,
-    hasShadow: false,           // 透明窗口的系统默认阴影是方形，关闭它
+    skipTaskbar: true,         // 主界面不占任务栏：最小化/关闭都只驻留系统托盘
+    hasShadow: false,          // 透明窗口的系统默认阴影是方形，关闭它
     transparent: true,
     backgroundColor: '#00000000',
     icon: ICON_PATH,
