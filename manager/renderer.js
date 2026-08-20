@@ -276,7 +276,6 @@ document.head.appendChild(style);
 // 顶栏按钮
 document.getElementById('btnSettings').addEventListener('click', () => ipcRenderer.send('settings-open'));
 document.getElementById('btnClose').addEventListener('click', () => ipcRenderer.send('manager-close'));
-document.getElementById('btnQuit').addEventListener('click', () => ipcRenderer.send('quit-app'));
 
 // ---------- 拖动期间关闭毛玻璃（软件渲染下实时模糊会让拖动卡死） ----------
 const topbar = document.querySelector('.topbar');
