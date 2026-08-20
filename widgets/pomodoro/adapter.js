@@ -8,7 +8,7 @@ const DEFAULTS = {
   settings: { focusMin: 25, shortBreakMin: 5, longBreakMin: 15, longBreakEvery: 4, autoNext: false, sound: true },
   pinned: false,
   locked: false,
-  bgOpacity: 0.55,      // 罩层不透明度（0=罩层全透明只剩实时毛玻璃，1=罩层全不透明纯色）
+  bgOpacity: 0.4,       // 罩层不透明度（默认背景透明度 60%）
   state: { phase: 'idle', running: false, endAt: 0, round: 0, taskId: null, remainMs: 0 },
   today: { key: '', count: 0 },
 };
@@ -27,7 +27,7 @@ function setup({ instance, win, save }) {
   let settings = { ...DEFAULTS.settings, ...(saved.settings || {}) };
   let pinned = !!saved.pinned;
   let locked = !!saved.locked;
-  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1) ? saved.bgOpacity : 0.55;
+  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1) ? saved.bgOpacity : DEFAULTS.bgOpacity;
   let today = { ...DEFAULTS.today, ...(saved.today || {}) };
   let state = { ...DEFAULTS.state, ...(saved.state || {}) };
   let selectedTaskId = (tasks.find(t => t.id === state.taskId) ? state.taskId : null);

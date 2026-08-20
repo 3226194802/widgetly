@@ -97,34 +97,35 @@ const CATEGORIES = [
 ];
 // 组件默认配置：实例配置为空时合并（修复"数字非常小"——cfg.width undefined 导致字号 NaN）
 const WIDGET_DEFAULTS = {
-  clock: { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 80, gradientOrder: 'abab', glass: true },
-  clockS: { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 80, gradientOrder: 'abab', glass: true },
-  clockM: { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 80, gradientOrder: 'abab', glass: true },
-  dock: { bgOpacity: 0.2, layout: '4x2', pinned: false, locked: false, items: [] },     // 透明度默认 80%
-  monitor: { bgOpacity: 1, pinned: false, locked: false },                              // 透明度默认 0%
+  // 新建组件的背景透明度统一为 60%（即背景罩层不透明度为 40%）。已有组件仍保留用户已选的值。
+  clock: { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 60, gradientOrder: 'abab', glass: true },
+  clockS: { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 60, gradientOrder: 'abab', glass: true },
+  clockM: { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 60, gradientOrder: 'abab', glass: true },
+  dock: { bgOpacity: 0.4, layout: '4x2', pinned: false, locked: false, items: [] },
+  monitor: { bgOpacity: 0.4, pinned: false, locked: false },
   galleryS: { folder: null, duration: 5, order: 'random' },
   galleryM: { folder: null, duration: 5, order: 'random' },
   galleryL: { folder: null, duration: 5, order: 'random' },
-  todo: { todos: {} },
-  calendarMini: { veilOpacity: 80, bgColor: '#ff8a5a', textColor: '#ffffff', accentColor: '#ffd9a0' },
-  calendarBar: { veilOpacity: 80, bgColor: '#16305c', textColor: '#ffffff', accentColor: '#57b7ff' },
-  calendarSquare: { veilOpacity: 80, bgColor: '#f7f1e3', textColor: '#4a3728', accentColor: '#d95a3a' },
-  calendarRing: { veilOpacity: 80, bgColor: '#e5ddf4', textColor: '#3d3560', accentColor: '#8f7bd8' },
-  calendarMint: { veilOpacity: 80, bgColor: '#d7efe2', textColor: '#20543f', accentColor: '#4cb882' },
-  calendarBig: { veilOpacity: 80, bgColor: '#f5f1e8', textColor: '#2b2b2b', accentColor: '#c83e2a' },
-  calendarXL: { veilOpacity: 80, bgColor: '#141a33', textColor: '#f2ede4', accentColor: '#9ec3d9' },
-  launcher: { veilOpacity: 0, dshPath: '', port: 3080, browser: 'default', apiKey: '', size: 'medium' },
+  todo: { todos: {}, appearance: { bg: 'white', bgOpacity: 40, fontColor: '#1e2832', fontSize: 12 } },
+  calendarMini: { veilOpacity: 60, bgColor: '#ff8a5a', textColor: '#ffffff', accentColor: '#ffd9a0' },
+  calendarBar: { veilOpacity: 60, bgColor: '#16305c', textColor: '#ffffff', accentColor: '#57b7ff' },
+  calendarSquare: { veilOpacity: 60, bgColor: '#f7f1e3', textColor: '#4a3728', accentColor: '#d95a3a' },
+  calendarRing: { veilOpacity: 60, bgColor: '#e5ddf4', textColor: '#3d3560', accentColor: '#8f7bd8' },
+  calendarMint: { veilOpacity: 60, bgColor: '#d7efe2', textColor: '#20543f', accentColor: '#4cb882' },
+  calendarBig: { veilOpacity: 60, bgColor: '#f5f1e8', textColor: '#2b2b2b', accentColor: '#c83e2a' },
+  calendarXL: { veilOpacity: 60, bgColor: '#141a33', textColor: '#f2ede4', accentColor: '#9ec3d9' },
+  launcher: { veilOpacity: 60, dshPath: '', port: 3080, browser: 'default', apiKey: '', size: 'medium' },
   pomodoro: {
     tasks: [],
     settings: { focusMin: 25, shortBreakMin: 5, longBreakMin: 15, longBreakEvery: 4, autoNext: false, sound: true },
-    pinned: false, locked: false, bgOpacity: 0.55,
+    pinned: false, locked: false, bgOpacity: 0.4,
     state: { phase: 'idle', running: false, endAt: 0, round: 0, taskId: null, remainMs: 0 },
     today: { key: '', count: 0 },
   },
   pomodoroBar: {
     tasks: [],
     settings: { focusMin: 25, shortBreakMin: 5, longBreakMin: 15, longBreakEvery: 4, autoNext: false, sound: true },
-    pinned: false, locked: false, bgOpacity: 0.55,
+    pinned: false, locked: false, bgOpacity: 0.4,
     state: { phase: 'idle', running: false, endAt: 0, round: 0, taskId: null, remainMs: 0 },
     today: { key: '', count: 0 },
   },
@@ -132,13 +133,13 @@ const WIDGET_DEFAULTS = {
     appearance: { curveColor: '#ffd24a', barColor: '#a07fff', fontColor: '#f2eee6', bgMode: 'frosted', bgColor: '#191722' },
     pinned: false, locked: false,
   },
-  sysmon: { slots: ['cpu', 'ram', 'gpu'], pinned: false, locked: false, bgOpacity: 1, bgColor: '#181a20', fontColor: '#f2eee6', barColor: null },
-  sysmonL: { slots: ['cpu', 'ram', 'gpu', 'battery', 'netdown', 'netup'], pinned: false, locked: false, bgOpacity: 1, bgColor: '#181a20', fontColor: '#f2eee6', barColor: null },
-  clock2: { hour12: false, theme: 'auto', showSeconds: false, locked: false, customized: false, bgOpacity: 0.22, bgColor: '#1e212a', fontColor: '#f2eee6' },
-  clock2S: { hour12: false, theme: 'auto', showSeconds: false, locked: false, customized: false, bgOpacity: 0.22, bgColor: '#1e212a', fontColor: '#f2eee6' },
-  clock2Sec: { hour12: false, theme: 'auto', showSeconds: true, locked: false, customized: false, bgOpacity: 0.22, bgColor: '#1e212a', fontColor: '#f2eee6' },
-  weather: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.22, bgColor: '#1e212a', fontColor: '#f2eee6' },
-  weatherS: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.22, bgColor: '#1e212a', fontColor: '#f2eee6' },
+  sysmon: { slots: ['cpu', 'ram', 'gpu'], pinned: false, locked: false, bgOpacity: 0.4, bgColor: '#181a20', fontColor: '#f2eee6', barColor: null },
+  sysmonL: { slots: ['cpu', 'ram', 'gpu', 'battery', 'netdown', 'netup'], pinned: false, locked: false, bgOpacity: 0.4, bgColor: '#181a20', fontColor: '#f2eee6', barColor: null },
+  clock2: { hour12: false, theme: 'auto', showSeconds: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
+  clock2S: { hour12: false, theme: 'auto', showSeconds: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
+  clock2Sec: { hour12: false, theme: 'auto', showSeconds: true, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
+  weather: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
+  weatherS: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
 };
 
 // ============ 配置 ============
@@ -149,6 +150,7 @@ function defaultConfig() {
     autostart: true,
     autostartMethod: 'registry',   // 开机自启方式：registry(最快) | startup(启动文件夹) | scheduler(计划任务)
     openManagerOnStart: true,  // 启动时是否自动打开组件坞（关闭则仅驻留托盘）
+    closeToTray: true,         // 关闭组件坞时隐藏到托盘（关闭后仍可从托盘打开）
     managerOpacity: 0.5,    // 管理器透明度（右上角滑块调节，0=不透明，1=全透明）
     pinToDesktop: false,    // 固定组件层级：开启后组件挂桌面层，免疫 Win+D/三指下滑（代价：无法拖动/右键）
     instances: [
@@ -590,8 +592,14 @@ function destroyWidgetWindow(id) {
 
 // ============ 管理器 ============
 let managerWin = null;
+let isQuitting = false;
 function createManagerWindow() {
-  if (managerWin && !managerWin.isDestroyed()) { managerWin.focus(); return; }
+  if (managerWin && !managerWin.isDestroyed()) {
+    if (managerWin.isMinimized()) managerWin.restore();
+    managerWin.show();
+    managerWin.focus();
+    return;
+  }
   managerWin = new BrowserWindow({
     width: 1060,
     height: 680,
@@ -609,6 +617,12 @@ function createManagerWindow() {
   });
   managerWin.loadFile(path.join(APP_DIR, 'manager', 'index.html'));
   roundWindowCorners(managerWin);   // 裁掉窗口矩形直角（SetWindowRgn 精确 32px 圆角，匹配 CSS）
+  managerWin.on('close', (event) => {
+    if (!isQuitting && global.__cfg && global.__cfg.closeToTray !== false) {
+      event.preventDefault();
+      managerWin.hide();
+    }
+  });
   managerWin.on('closed', () => { managerWin = null; });
 }
 
@@ -707,6 +721,12 @@ ipcMain.on('autostartMethod:save', (_e, v) => {
 ipcMain.handle('openManagerOnStart:get', () => global.__cfg.openManagerOnStart !== false);
 ipcMain.on('openManagerOnStart:save', (_e, v) => {
   global.__cfg.openManagerOnStart = !!v;
+  saveConfig();
+});
+// ---------- 设置：关闭组件坞时最小化到托盘 ----------
+ipcMain.handle('closeToTray:get', () => global.__cfg.closeToTray !== false);
+ipcMain.on('closeToTray:save', (_e, v) => {
+  global.__cfg.closeToTray = !!v;
   saveConfig();
 });
 let settingsWin = null;
@@ -829,3 +849,4 @@ app.whenReady().then(async () => {
 
 // 管理器关窗不退出（托盘常驻）；显式退出才退
 app.on('window-all-closed', () => { /* 常驻托盘，不退出 */ });
+app.on('before-quit', () => { isQuitting = true; });

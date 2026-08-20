@@ -23,7 +23,7 @@ const LAYOUTS = {
   '5x4': { cols: 5, rows: 4, w: 284, h: 224, cell: 44, icon: 40 },
   '5x3': { cols: 5, rows: 3, w: 284, h: 174, cell: 44, icon: 40 },
 };
-const DEFAULTS = { bgOpacity: 0.2, layout: '4x2', pinned: false, locked: false, items: [] };
+const DEFAULTS = { bgOpacity: 0.4, layout: '4x2', pinned: false, locked: false, items: [] };
 
 // ============ 图标提取链（实例无关，模块级共享） ============
 function cacheKey(p) { return crypto.createHash('md5').update(String(p).toLowerCase()).digest('hex'); }
@@ -366,8 +366,9 @@ function setup({ instance, win, save }) {
   let layout = LAYOUTS[saved.layout] ? saved.layout : '4x2';
   let pinned = !!saved.pinned;
   let locked = !!saved.locked;
-  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity > 0 && saved.bgOpacity <= 1)
-    ? saved.bgOpacity : 0.92;
+  // 0 也是用户可选的有效值（100% 透明）；此前用 > 0 判断会在重启后错误回退。
+  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1)
+    ? saved.bgOpacity : DEFAULTS.bgOpacity;
 
   function capacity() { return LAYOUTS[layout].cols * LAYOUTS[layout].rows; }
 

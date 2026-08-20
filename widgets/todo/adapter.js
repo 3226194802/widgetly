@@ -5,7 +5,7 @@ const path = require('path');
 
 const DEFAULTS = {
   todos: {},
-  appearance: { bg: 'white', bgOpacity: 30, fontColor: '#1e2832', fontSize: 12 },
+  appearance: { bg: 'white', bgOpacity: 40, fontColor: '#1e2832', fontSize: 12 },
   size: 'medium',
   locked: false,
 };

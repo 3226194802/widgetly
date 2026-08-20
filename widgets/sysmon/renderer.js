@@ -9,7 +9,7 @@ const CIRC = 2 * Math.PI * 30;
 
 let locked = false;
 let slotEls = [];
-let style = { bgColor: '#181a20', bgOpacity: 1, fontColor: '#f2eee6', barColor: null };
+let style = { bgColor: '#181a20', bgOpacity: 0.4, fontColor: '#f2eee6', barColor: null };
 
 function hexToRgba(hex, a) {
   const h = String(hex || '#181a20').replace('#', '');

@@ -19,7 +19,7 @@ const el = {
 };
 
 let locked = false;
-let style = { bgColor: '#1e212a', bgOpacity: 0.22, fontColor: '#f2eee6', customized: false };
+let style = { bgColor: '#1e212a', bgOpacity: 0.4, fontColor: '#f2eee6', customized: false };
 const SQUARE = window.innerWidth < 200;
 card.classList.toggle('sq', SQUARE);
 

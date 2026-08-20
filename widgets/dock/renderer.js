@@ -147,7 +147,7 @@ const slider = $('opSlider');
 const opFill = $('opFill');
 const opThumb = $('opThumb');
 const opVal = $('opVal');
-let veilVal = 28;   // 透明度百分比（0=不透明，100=全透明）
+let veilVal = 60;   // 透明度百分比（0=不透明，100=全透明）
 function paintSlider(v) {
   veilVal = v;
   opFill.style.width = v + '%';

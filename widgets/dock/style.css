@@ -12,7 +12,7 @@ html, body {
 }
 
 #card {
-  --bg-a: 0.92;   /* 毛玻璃白罩不透明度（可调，映射到 .veil） */
+  --bg-a: 0.4;    /* 毛玻璃白罩不透明度（默认背景透明度 60%） */
   position: relative;
   width: 100%;
   height: 100%;
@@ -129,12 +129,12 @@ html, body {
 }
 .op-fill {
   position: absolute; left: 0; top: 0; bottom: 0;
-  width: 28%;
+  width: 60%;
   border-radius: 7px;
   background: #0a84ff;
 }
 .op-thumb {
-  position: absolute; top: 50%; left: 28%;
+  position: absolute; top: 50%; left: 60%;
   width: 16px; height: 16px;
   margin: -8px 0 0 -8px;
   border-radius: 50%;

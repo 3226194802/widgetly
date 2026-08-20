@@ -6,7 +6,7 @@ const instId = new URLSearchParams(location.search).get('inst') || 'todo-1';
 
 let today = null;
 let todos = [];
-let appearance = { bg: 'white', bgOpacity: 30, fontColor: '#1e2832', fontSize: 12 };
+let appearance = { bg: 'white', bgOpacity: 40, fontColor: '#1e2832', fontSize: 12 };
 let size = 'medium';
 
 const BTN_COLORS = ['#a8d8ff', '#ffb3b3', '#ffe08a', '#a9e6b8', '#d4bfff', '#ffc9a3', '#d9c4ae'];

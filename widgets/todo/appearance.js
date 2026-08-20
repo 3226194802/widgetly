@@ -3,7 +3,7 @@
 const { ipcRenderer } = require('electron');
 const instId = new URLSearchParams(location.search).get('inst') || 'todo-1';
 
-let appearance = { bg: 'white', bgOpacity: 30, fontColor: '#1e2832', fontSize: 12 };
+let appearance = { bg: 'white', bgOpacity: 40, fontColor: '#1e2832', fontSize: 12 };
 
 const BG_GRADIENTS = [
   { name: '白色', v: '#ffffff' },

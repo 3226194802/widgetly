@@ -14,7 +14,7 @@ const DEFAULTS = {
   mint:   { bg: '#d7efe2', text: '#20543f', accent: '#4cb882' },
 };
 
-let cfg = { veilOpacity: 80, bgColor: DEFAULTS[STYLE].bg, textColor: DEFAULTS[STYLE].text, accentColor: DEFAULTS[STYLE].accent };
+let cfg = { veilOpacity: 60, bgColor: DEFAULTS[STYLE].bg, textColor: DEFAULTS[STYLE].text, accentColor: DEFAULTS[STYLE].accent };
 let now = new Date();
 let todayKey = '';
 
@@ -232,7 +232,7 @@ function savePrefs() {
     const c = await ipcRenderer.invoke('cfg:' + instId);
     if (c) {
       cfg = {
-        veilOpacity: typeof c.veilOpacity === 'number' ? c.veilOpacity : 80,
+        veilOpacity: typeof c.veilOpacity === 'number' ? c.veilOpacity : 60,
         bgColor: c.bgColor || DEFAULTS[STYLE].bg,
         textColor: c.textColor || DEFAULTS[STYLE].text,
         accentColor: c.accentColor || DEFAULTS[STYLE].accent,

@@ -5,7 +5,7 @@ const path = require('path');
 const { AGENTS, hasPendingDsh } = require('./agents.js');
 
 const DEFAULTS = {
-  bgOpacity: 1, pinned: false, locked: false, glass: false,
+  bgOpacity: 0.4, pinned: false, locked: false, glass: false,
   platform: 'hermes',
   appearance: { fontColor: '#f1e8d8', accentColor: '#f0a83a', bgColor: '#3e3128' },
 };
@@ -20,8 +20,8 @@ function setup({ instance, win, save }) {
   let appearance = { ...DEFAULTS.appearance, ...(saved.appearance || {}) };
   let appearanceWin = null;
   let platformWin = null;
-  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity > 0 && saved.bgOpacity <= 1)
-    ? saved.bgOpacity : 0.66;
+  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1)
+    ? saved.bgOpacity : DEFAULTS.bgOpacity;
   let platform = AGENTS.find((a) => a.id === saved.platform) || AGENTS[0];
   let pollTimer = null;
   let fetchBusy = false;

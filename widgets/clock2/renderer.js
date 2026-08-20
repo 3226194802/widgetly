@@ -13,7 +13,7 @@ const weekEl = document.getElementById('week');
 const WEEKS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 let cfg = { hour12: false, theme: 'auto', showSeconds: wid === 'clock2Sec' };
 let locked = false;
-let style = { bgColor: '#1e212a', bgOpacity: 0.22, fontColor: '#f2eee6', customized: false };
+let style = { bgColor: '#1e212a', bgOpacity: 0.4, fontColor: '#f2eee6', customized: false };
 
 const card = document.querySelector('.card');
 

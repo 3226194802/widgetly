@@ -196,7 +196,7 @@ if (instId === 'preview') {
     today: { count: 3 },
     locked: false,
     selectedTaskId: null,
-    bgOpacity: 0.55,
+    bgOpacity: 0.4,
     state: { phase: 'idle', running: false, round: 0, taskId: null, remain: 0 },
   });
 }

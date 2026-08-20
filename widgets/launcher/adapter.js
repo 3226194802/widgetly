@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 
 const DEFAULTS = {
-  dshPath: '', port: 3080, browser: 'default', apiKey: '', size: 'medium', veilOpacity: 0, theme: 'light', locked: false,
+  dshPath: '', port: 3080, browser: 'default', apiKey: '', size: 'medium', veilOpacity: 60, theme: 'light', locked: false,
 };
 const SIZES = {
   small: { w: 65, h: 70, label: '小号' },

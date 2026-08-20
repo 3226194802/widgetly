@@ -9,7 +9,7 @@ const { spawn } = require('child_process');
 
 const DEFAULTS = {
   slots: ['cpu', 'ram', 'gpu'], pinned: false, locked: false,
-  bgOpacity: 1, bgColor: '#181a20', fontColor: '#f2eee6', barColor: null,
+  bgOpacity: 0.4, bgColor: '#181a20', fontColor: '#f2eee6', barColor: null,
 };
 
 const BASE_METRICS = [
@@ -76,7 +76,7 @@ function setup({ instance, win, save }) {
   let slots = (Array.isArray(saved.slots) && saved.slots.length >= slotCount) ? saved.slots.slice(0, slotCount) : [...DEF_SLOTS];
   let pinned = !!saved.pinned;
   let locked = !!saved.locked;
-  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1) ? saved.bgOpacity : 1;
+  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1) ? saved.bgOpacity : DEFAULTS.bgOpacity;
   let bgColor = typeof saved.bgColor === 'string' ? saved.bgColor : '#181a20';
   let fontColor = typeof saved.fontColor === 'string' ? saved.fontColor : '#f2eee6';
   let barColor = (typeof saved.barColor === 'string' && saved.barColor) ? saved.barColor : null;

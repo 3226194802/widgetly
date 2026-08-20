@@ -1,4 +1,4 @@
-// 设置窗口 —— 渲染进程：开机自启 / 启动打开组件坞 / 固定组件层级
+// 设置窗口 —— 渲染进程：开机自启 / 托盘行为 / 固定组件层级
 const { ipcRenderer } = require('electron');
 
 function bindToggle(el, getCh, saveCh) {
@@ -16,6 +16,7 @@ function bindToggle(el, getCh, saveCh) {
 
 bindToggle(document.getElementById('tgAutostart'), 'autostart:get', 'autostart:save');
 bindToggle(document.getElementById('tgOpenManager'), 'openManagerOnStart:get', 'openManagerOnStart:save');
+bindToggle(document.getElementById('tgCloseToTray'), 'closeToTray:get', 'closeToTray:save');
 bindToggle(document.getElementById('tgPin'), 'pinToDesktop:get', 'pinToDesktop:save');
 
 // 开机自启方式下拉

@@ -14,7 +14,7 @@ function evt(msg) { ipcRenderer.send('evt', msg); }
   try {
     cfg = await ipcRenderer.invoke('cfg:' + instId);
   } catch (_) {
-    cfg = { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 80 };
+    cfg = { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 60 };
   }
   const glass = document.getElementById('glass');
   const ampmEl = document.getElementById('ampm');

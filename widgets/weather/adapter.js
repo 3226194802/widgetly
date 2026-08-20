@@ -8,7 +8,7 @@ const https = require('https');
 const DEFAULTS = {
   city: '北京', pinned: false, locked: false,
   customized: false,
-  bgOpacity: 0.22,
+  bgOpacity: 0.4,
   bgColor: '#1e212a',
   fontColor: '#f2eee6',
 };
@@ -67,7 +67,7 @@ function setup({ instance, win, save }) {
   let pinned = !!saved.pinned;
   let locked = !!saved.locked;
   let customized = !!saved.customized;
-  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1) ? saved.bgOpacity : 0.22;
+  let bgOpacity = (typeof saved.bgOpacity === 'number' && saved.bgOpacity >= 0 && saved.bgOpacity <= 1) ? saved.bgOpacity : DEFAULTS.bgOpacity;
   let bgColor = typeof saved.bgColor === 'string' ? saved.bgColor : '#1e212a';
   let fontColor = typeof saved.fontColor === 'string' ? saved.fontColor : '#f2eee6';
   let settingsWin = null;

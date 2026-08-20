@@ -8,7 +8,7 @@ const DEFAULTS = {
   showSeconds: false, // clock2Sec 默认 true
   locked: false,
   customized: false,  // 是否手动调过外观（外观/透明度）
-  bgOpacity: 0.22,    // 卡片底色不透明度
+  bgOpacity: 0.4,     // 卡片底色不透明度（默认背景透明度 60%）
   bgColor: '#1e212a', // 卡片底色（深色主题基底）
   fontColor: '#f2eee6',
 };
