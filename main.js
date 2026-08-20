@@ -593,6 +593,12 @@ function destroyWidgetWindow(id) {
 // ============ 管理器 ============
 let managerWin = null;
 let isQuitting = false;
+function hideManagerToTray() {
+  if (!managerWin || managerWin.isDestroyed()) return;
+  // 右上角 × 的目标行为是“隐藏主窗口”，不是请求销毁窗口。
+  // 直接 hide 可避免部分 Windows/Electron 关闭路径把主进程一并结束。
+  managerWin.hide();
+}
 function createManagerWindow() {
   if (managerWin && !managerWin.isDestroyed()) {
     if (managerWin.isMinimized()) managerWin.restore();
@@ -620,7 +626,7 @@ function createManagerWindow() {
   managerWin.on('close', (event) => {
     if (!isQuitting && global.__cfg && global.__cfg.closeToTray !== false) {
       event.preventDefault();
-      managerWin.hide();
+      hideManagerToTray();
     }
   });
   managerWin.on('closed', () => { managerWin = null; });
@@ -694,7 +700,11 @@ ipcMain.on('toggle-widget', (e, id) => {
     if (inst) createWidgetWindow(inst);
   }
 });
-ipcMain.on('manager-close', () => { if (managerWin) managerWin.close(); });
+// 主窗口右上角 ×：默认直接隐藏到托盘，绝不通过 close() 销毁窗口。
+ipcMain.on('manager-close', () => {
+  if (global.__cfg && global.__cfg.closeToTray !== false) hideManagerToTray();
+  else if (managerWin && !managerWin.isDestroyed()) managerWin.close();
+});
 // ---------- 设置：固定组件层级（免疫 Win+D / 三指下滑） ----------
 ipcMain.handle('pinToDesktop:get', () => !!global.__cfg.pinToDesktop);
 ipcMain.on('pinToDesktop:save', (_e, v) => {
