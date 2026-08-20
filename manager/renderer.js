@@ -275,7 +275,17 @@ document.head.appendChild(style);
 
 // 顶栏按钮
 document.getElementById('btnSettings').addEventListener('click', () => ipcRenderer.send('settings-open'));
+document.getElementById('btnMinimize').addEventListener('click', () => ipcRenderer.send('manager-minimize'));
 document.getElementById('btnClose').addEventListener('click', () => ipcRenderer.send('manager-close'));
+// × 的语义随设置开关变化：开启时隐藏到托盘，关闭时彻底退出。
+const closeButton = document.getElementById('btnClose');
+function paintCloseButton(closeToTray) {
+  closeButton.title = closeToTray ? '关闭时最小化到托盘' : '退出软件';
+}
+(async () => {
+  try { paintCloseButton(await ipcRenderer.invoke('closeToTray:get')); } catch (_) { paintCloseButton(true); }
+})();
+ipcRenderer.on('closeToTray:changed', (_e, on) => paintCloseButton(!!on));
 
 // ---------- 拖动期间关闭毛玻璃（软件渲染下实时模糊会让拖动卡死） ----------
 const topbar = document.querySelector('.topbar');

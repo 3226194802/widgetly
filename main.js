@@ -624,9 +624,10 @@ function createManagerWindow() {
   managerWin.loadFile(path.join(APP_DIR, 'manager', 'index.html'));
   roundWindowCorners(managerWin);   // 裁掉窗口矩形直角（SetWindowRgn 精确 32px 圆角，匹配 CSS）
   managerWin.on('close', (event) => {
-    if (!isQuitting && global.__cfg && global.__cfg.closeToTray !== false) {
+    if (!isQuitting) {
       event.preventDefault();
-      hideManagerToTray();
+      if (global.__cfg && global.__cfg.closeToTray !== false) hideManagerToTray();
+      else app.quit();
     }
   });
   managerWin.on('closed', () => { managerWin = null; });
@@ -700,11 +701,13 @@ ipcMain.on('toggle-widget', (e, id) => {
     if (inst) createWidgetWindow(inst);
   }
 });
-// 主窗口右上角 ×：默认直接隐藏到托盘，绝不通过 close() 销毁窗口。
+// 主窗口右上角 ×：开关开启时隐藏到托盘；关闭时真正退出整个应用和全部组件。
 ipcMain.on('manager-close', () => {
   if (global.__cfg && global.__cfg.closeToTray !== false) hideManagerToTray();
-  else if (managerWin && !managerWin.isDestroyed()) managerWin.close();
+  else app.quit();
 });
+// 主窗口最小化按钮：始终隐藏到托盘，不受“关闭软件”开关影响。
+ipcMain.on('manager-minimize', hideManagerToTray);
 // ---------- 设置：固定组件层级（免疫 Win+D / 三指下滑） ----------
 ipcMain.handle('pinToDesktop:get', () => !!global.__cfg.pinToDesktop);
 ipcMain.on('pinToDesktop:save', (_e, v) => {
@@ -738,6 +741,7 @@ ipcMain.handle('closeToTray:get', () => global.__cfg.closeToTray !== false);
 ipcMain.on('closeToTray:save', (_e, v) => {
   global.__cfg.closeToTray = !!v;
   saveConfig();
+  if (managerWin && !managerWin.isDestroyed()) managerWin.webContents.send('closeToTray:changed', global.__cfg.closeToTray);
 });
 let settingsWin = null;
 function openSettingsWindow() {
