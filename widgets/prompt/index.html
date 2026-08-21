@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AI 提示词优化</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card" id="card">
+    <div class="veil" id="veil"></div>
+    <header class="header" id="dragArea">
+      <div class="brand"><span class="spark">✦</span><span>AI 提示词优化</span></div>
+      <div class="head-actions"><button class="config" id="btnHistory" title="历史对话">◷</button><button class="config" id="btnConfig" title="AI 与组件设置">⚙</button></div>
+    </header>
+
+    <section class="strength" aria-label="优化强度">
+      <button class="level active" data-level="1"><b>轻度</b><span>只润色</span></button>
+      <button class="level" data-level="2"><b>增强</b><span>更清楚</span></button>
+      <button class="level" data-level="3"><b>深度</b><span>完整指令</span></button>
+    </section>
+    <p class="level-tip" id="levelTip">保留原意，只让表达更自然、清楚。</p>
+
+    <section class="editor">
+      <div class="input-head"><span>原始内容</span><button id="btnReadClipboard">读取剪贴板</button></div>
+      <textarea id="source" placeholder="粘贴想交给 AI 的话…"></textarea>
+      <textarea id="context" class="context" placeholder="可选：回答 AI 提出的确认问题，或补充背景…"></textarea>
+    </section>
+
+    <div class="actions">
+      <button class="optimize" id="btnOptimize">✦ 开始优化</button>
+      <button class="clear" id="btnClear" title="清空内容">清空</button>
+    </div>
+    <section class="result empty" id="resultBox">
+      <div class="result-head"><span>优化结果</span><div class="result-actions"><button id="btnCopy" disabled>复制</button><button id="btnDone" hidden>完成</button></div></div>
+      <div class="result-text" id="resultText">配置 AI 服务后，即可把剪贴板里的想法变成可直接使用的提示词。</div>
+    </section>
+    <div class="status" id="status" role="status"></div>
+
+    <div class="op-panel" id="opPanel" hidden>
+      <span>背景透明度</span>
+      <div class="op-slider" id="opSlider"><i id="opFill"></i><b id="opThumb"></b></div>
+      <em id="opVal">60%</em>
+    </div>
+    <div class="resize-grip" id="resizeGrip" title="拖动调整组件大小"></div>
+  </main>
+  <script src="renderer.js"></script>
+</body>
+</html>

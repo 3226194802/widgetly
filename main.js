@@ -3,7 +3,80 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, screen, desktopCapturer, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { spawn } = require('child_process');
+
+// ============ 启动异常日志 ============
+// 说明：JS/渲染进程异常可以在当次直接写入桌面；若是进程被系统强制终止，
+// 则保留启动标记，并在下一次正常启动时补出一份“上次启动异常退出”报告。
+// 日志绝不包含用户设置的 AI API Key。
+const CRASH_STATE_DIR = path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'Widgetly');
+const STARTUP_MARKER_FILE = path.join(CRASH_STATE_DIR, 'startup-in-progress.json');
+const STARTED_AT = Date.now();
+const IS_TEST_MODE = process.argv.includes('--widgetly-test-mode');
+let startupMarkedHealthy = false;
+
+function desktopLogDir() {
+  try { return app.getPath('desktop'); } catch (_) { return path.join(os.homedir(), 'Desktop'); }
+}
+function formatCrashDetail(err) {
+  if (!err) return '未提供异常对象';
+  if (err instanceof Error) return err.stack || err.message || String(err);
+  if (typeof err === 'object') {
+    try { return JSON.stringify(err, null, 2); } catch (_) { return String(err); }
+  }
+  return String(err);
+}
+function writeCrashLog(kind, err, extra = '') {
+  try {
+    const d = new Date();
+    const stamp = d.toISOString().replace(/[.:]/g, '-');
+    const lines = [
+      'Widgetly 组件坞 - 异常诊断日志',
+      '生成时间: ' + d.toLocaleString('zh-CN'),
+      '异常类型: ' + kind,
+      '应用版本: ' + (app.getVersion ? app.getVersion() : '未知'),
+      '运行环境: Windows ' + os.release() + ' / ' + process.arch + ' / Electron ' + (process.versions.electron || '未知'),
+      '是否安装版: ' + (app.isPackaged ? '是' : '否'),
+      '启动后经过: ' + Math.max(0, Date.now() - STARTED_AT) + ' ms',
+      '',
+      '异常详情:',
+      formatCrashDetail(err),
+    ];
+    if (extra) lines.push('', '附加信息:', String(extra));
+    lines.push('', '说明：请将此文件发给 Widgetly 开发者。日志不会记录 API Key。');
+    // 只写入桌面上的单个 .txt 文件；这里不创建“日志文件夹”，也不会在桌面留下目录。
+    fs.writeFileSync(path.join(desktopLogDir(), `Widgetly-异常日志-${stamp}.txt`), lines.join('\r\n'), 'utf8');
+  } catch (_) {
+    // 写桌面目录失败时，不再抛出第二个异常，避免掩盖原始问题。
+  }
+}
+function recoverInterruptedStartup() {
+  try {
+    if (!fs.existsSync(STARTUP_MARKER_FILE)) return;
+    const previous = JSON.parse(fs.readFileSync(STARTUP_MARKER_FILE, 'utf8'));
+    writeCrashLog('上一次启动未完成', new Error('程序在完成启动前异常退出或被系统终止。'), '上次启动时间: ' + (previous.startedAt || '未知'));
+    fs.unlinkSync(STARTUP_MARKER_FILE);
+  } catch (_) {}
+}
+function markStartupInProgress() {
+  try {
+    fs.mkdirSync(CRASH_STATE_DIR, { recursive: true });
+    fs.writeFileSync(STARTUP_MARKER_FILE, JSON.stringify({ startedAt: new Date().toISOString(), pid: process.pid }), 'utf8');
+  } catch (_) {}
+}
+function markStartupHealthy() {
+  if (startupMarkedHealthy) return;
+  startupMarkedHealthy = true;
+  try { if (fs.existsSync(STARTUP_MARKER_FILE)) fs.unlinkSync(STARTUP_MARKER_FILE); } catch (_) {}
+}
+
+// 必须在加载各个组件适配层之前注册：这样某个组件依赖加载失败也能留下日志。
+process.on('uncaughtException', (err) => {
+  writeCrashLog('主进程未捕获异常', err);
+  setTimeout(() => app.exit(1), 40);
+});
+process.on('unhandledRejection', (reason) => writeCrashLog('未处理的异步异常', reason));
 
 // 组件专属适配层（主进程侧）：dock 图标提取/items 管理、monitor 数据轮询、gallery 图库
 const dockAdapter = require('./widgets/dock/adapter.js');
@@ -18,6 +91,7 @@ const memoryAdapter = require('./widgets/memory/adapter.js');
 const sysmonAdapter = require('./widgets/sysmon/adapter.js');
 const clock2Adapter = require('./widgets/clock2/adapter.js');
 const weatherAdapter = require('./widgets/weather/adapter.js');
+const promptAdapter = require('./widgets/prompt/adapter.js');
 
 const APP_DIR = __dirname;
 const USER_DATA = app.getPath('userData');                 // 可写目录（%APPDATA%\Widgetly）
@@ -34,6 +108,8 @@ const gotSingleLock = app.requestSingleInstanceLock();
 if (!gotSingleLock) {
   app.quit();
 } else {
+  recoverInterruptedStartup();
+  markStartupInProgress();
   app.on('second-instance', () => {
     // 用户关闭「启动时打开组件坞」时：再次启动只保持托盘驻留，不弹主界面
     if (global.__cfg && global.__cfg.openManagerOnStart === false) {
@@ -61,6 +137,7 @@ const WIDGETS = {
   clock2Sec: { id: 'clock2Sec', name: '数字时钟·带秒', icon: '⏱️', w: 280, h: 148, entry: 'index.html', dir: 'clock2', category: 'clock' },
   weather: { id: 'weather', name: '天气·今日', icon: '🌤️', w: 280, h: 148, entry: 'index.html', category: 'tool' },
   dock: { id: 'dock', name: '弹力文件夹', icon: '🗂️', w: 280, h: 148, entry: 'index.html', category: 'tool' },
+  prompt: { id: 'prompt', name: 'AI 提示词优化', icon: '✨', w: 360, h: 410, entry: 'index.html', category: 'productivity' },
   galleryM: { id: 'galleryM', name: '图库·中', icon: '🖼️', w: 280, h: 148, entry: 'index.html', dir: 'gallery', category: 'tool' },
   calendarBar: { id: 'calendarBar', name: '日历·今日脉搏', icon: '📅', w: 280, h: 148, entry: 'bar.html', dir: 'calendar', category: 'calendar' },
   pomodoroBar: { id: 'pomodoroBar', name: '番茄时钟·中长条', icon: '🍅', w: 280, h: 148, entry: 'bar.html', dir: 'pomodoro', category: 'productivity' },
@@ -140,6 +217,8 @@ const WIDGET_DEFAULTS = {
   clock2Sec: { hour12: false, theme: 'auto', showSeconds: true, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
   weather: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
   weatherS: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
+  // AI 提示词优化：默认 60% 透明；尺寸由用户在组件右下角自由调整并持久化。
+  prompt: { bgOpacity: 0.4, pinned: false, locked: false, width: 360, height: 410, strength: 1, displayMode: 'large' },
 };
 
 // ============ 配置 ============
@@ -404,6 +483,12 @@ function expectedSize(instance) {
     const s = (instance.config && instance.config.size) || 'medium';
     if (launcherAdapter.SIZES[s]) return { w: launcherAdapter.SIZES[s].w, h: launcherAdapter.SIZES[s].h };
   }
+  if (instance.widgetId === 'prompt') {
+    const c = instance.config || {};
+    const width = Number.isFinite(c.width) ? Math.max(320, Math.min(760, Math.round(c.width))) : 360;
+    const height = Number.isFinite(c.height) ? Math.max(240, Math.min(860, Math.round(c.height))) : 410;
+    return { w: width, h: height };
+  }
   return base;
 }
 const dragTimers = new Map();       // webContents.id -> timer
@@ -513,7 +598,8 @@ function saveInstancePos(win) {
 function createWidgetWindow(instance) {
   const wdef = WIDGETS[instance.widgetId];
   if (!wdef) return null;
-  const [ww, wh] = [wdef.w, wdef.h];   // 尺寸统一取自注册表
+  const initialSize = expectedSize(instance) || { w: wdef.w, h: wdef.h };
+  const [ww, wh] = [initialSize.w, initialSize.h];
 
   const win = new BrowserWindow({
     width: ww,
@@ -522,7 +608,13 @@ function createWidgetWindow(instance) {
     y: instance.y,
     frame: false,
     transparent: true,
+    // AI 提示词组件使用自绘右下角缩放柄；关闭 Windows 原生缩放可杜绝
+    // 无边框窗口双击后被系统自动放大/还原。
     resizable: false,
+    minWidth: instance.widgetId === 'prompt' ? 320 : undefined,
+    minHeight: instance.widgetId === 'prompt' ? 240 : undefined,
+    maxWidth: instance.widgetId === 'prompt' ? 760 : undefined,
+    maxHeight: instance.widgetId === 'prompt' ? 860 : undefined,
     maximizable: false,
     minimizable: false,
     fullscreenable: false,
@@ -580,6 +672,7 @@ function createWidgetWindow(instance) {
   if (instance.widgetId === 'sysmon' || instance.widgetId === 'sysmonL') sysmonAdapter.setup({ instance, win, save: saveConfig });
   if (String(instance.widgetId).startsWith('clock2')) clock2Adapter.setup({ instance, win, save: saveConfig });
   if (String(instance.widgetId).startsWith('weather')) weatherAdapter.setup({ instance, win, save: saveConfig });
+  if (instance.widgetId === 'prompt') promptAdapter.setup({ instance, win, save: saveConfig });
 
   win.on('closed', () => { if (widgetWins[instance.id] === win) delete widgetWins[instance.id]; });
   return win;
@@ -846,8 +939,15 @@ ipcMain.on('evt', (e, msg) => {
 // ============ 启动 ============
 app.whenReady().then(async () => {
   global.__cfg = loadConfig();   // screen 就绪后再读配置
+  // 渲染进程/GPU/子进程异常不会总是触发主进程 uncaughtException，单独记录。
+  app.on('render-process-gone', (_event, contents, details) => {
+    writeCrashLog('渲染进程异常退出', new Error(details && details.reason ? details.reason : '未知渲染进程异常'), `exitCode=${details && details.exitCode}; webContentsId=${contents && contents.id}`);
+  });
+  app.on('child-process-gone', (_event, details) => {
+    writeCrashLog('子进程异常退出', new Error(details && details.type ? details.type : '未知子进程异常'), `reason=${details && details.reason}; exitCode=${details && details.exitCode}`);
+  });
   loadDesktopApi();              // 桌面层挂载 API（WorkerW）
-  applyAutostart();              // 按 autostart 配置注册/取消开机自启
+  if (!IS_TEST_MODE) applyAutostart(); // 本地隔离测试不修改用户真实的 Windows 开机启动项
   initUpdater();                 // 在线更新（仅打包版生效）
   await captureWallpaper();      // 窗口未建，截干净壁纸（desktopCapturer 会破坏已建透明窗口，必须先截）
   if (global.__cfg.openManagerOnStart !== false) createManagerWindow();
@@ -858,9 +958,11 @@ app.whenReady().then(async () => {
     setTimeout(() => { if (!widgetWins[inst.id]) createWidgetWindow(inst); }, i * 120);
   });
   setTimeout(() => applyPinMode(), Math.max(500, global.__cfg.instances.length * 120 + 300));
+  // 等管理器与错峰组件均有机会创建后，清除“启动中”标记。
+  setTimeout(markStartupHealthy, Math.max(3000, global.__cfg.instances.length * 120 + 1500));
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createManagerWindow(); });
 });
 
 // 管理器关窗不退出（托盘常驻）；显式退出才退
 app.on('window-all-closed', () => { /* 常驻托盘，不退出 */ });
-app.on('before-quit', () => { isQuitting = true; });
+app.on('before-quit', () => { isQuitting = true; markStartupHealthy(); });

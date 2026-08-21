@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>配置 AI 服务</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#202532}.win{position:absolute;inset:8px;padding:17px;border-radius:18px;background:rgba(250,251,255,.97);border:1px solid rgba(50,69,110,.14);box-shadow:0 14px 40px rgba(13,20,45,.28);display:flex;flex-direction:column;gap:10px}.head{display:flex;align-items:center;justify-content:space-between;flex:none;-webkit-app-region:drag}.title{font-size:15px;font-weight:800}.close{width:26px;height:26px;border:0;border-radius:8px;background:transparent;color:#7e8594;cursor:pointer;font-size:15px;-webkit-app-region:no-drag}.close:hover{background:rgba(0,0,0,.07)}.content{flex:1;min-height:0;overflow-y:auto;padding-right:3px;display:flex;flex-direction:column;gap:12px}.intro{margin:0;font-size:11px;line-height:1.55;color:#687185}.field{display:flex;flex-direction:column;gap:5px}.field label{font-size:12px;font-weight:700;color:#31394b}.field small{font-size:10px;color:#7c8493;line-height:1.35}.field input,.field select{width:100%;height:34px;padding:0 9px;border:1px solid rgba(52,67,97,.18);border-radius:9px;outline:0;color:#222a39;background:#fff;font-size:12px}.field input:focus,.field select:focus{border-color:#6d8cf1;box-shadow:0 0 0 3px rgba(109,140,241,.12)}.tip{padding:9px 10px;border-radius:10px;background:rgba(91,123,230,.08);color:#59677f;font-size:10px;line-height:1.5}.status{flex:none;min-height:17px;font-size:11px;color:#65708a}.status.error{color:#b23a4f}.status.ok{color:#15845d}.foot{display:flex;flex:none;gap:8px}.save{height:37px;border:0;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer}.save:disabled{opacity:.62;cursor:wait}.save.secondary{width:36%;color:#4d6294;background:#edf1fb;border:1px solid rgba(80,104,158,.18)}.save.primary{flex:1;color:#fff;background:linear-gradient(110deg,#5679ec,#8a5fe3);box-shadow:0 4px 12px rgba(81,91,189,.24)}.save:hover{filter:brightness(1.04)}
+</style>
+</head>
+<body>
+  <div class="win">
+    <div class="head"><span class="title">AI 与组件设置</span><button class="close" id="closeBtn">✕</button></div>
+    <div class="content">
+      <p class="intro">使用你自己的 OpenAI 兼容 AI 服务。API Key 仅保存在这台电脑的 Widgetly 配置中，优化内容只会发送给你填写的服务地址。</p>
+      <div class="field"><label for="apiKey">1. API Key</label><input id="apiKey" type="password" autocomplete="off" placeholder="粘贴你的 API Key"><small id="keyHint">留空将保留已保存的 Key。</small></div>
+      <div class="field"><label for="baseUrl">2. API 地址</label><input id="baseUrl" type="url" spellcheck="false" placeholder="https://api.openai.com/v1"><small>填写 OpenAI 兼容的基础地址；也可直接填到 /chat/completions。</small></div>
+      <div class="field"><label for="model">3. 模型名称</label><input id="model" type="text" spellcheck="false" placeholder="例如：gpt-4o-mini"><small>请填写服务商实际提供的模型 ID。</small></div>
+      <div class="field"><label for="strength">优化强度</label><select id="strength"><option value="1">轻度：只润色，不改变原意</option><option value="2">增强：表达更清楚，必要时少量提问</option><option value="3">深度：生成完整、直接的高质量指令</option></select><small>小形态时，强度选择只在这里和右键菜单中显示。</small></div>
+      <div class="tip">“保存配置”不联网；“测试并保存”会发送一条极短测试请求，适合确认地址、模型与 Key 均可用。</div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="foot"><button class="save secondary" id="saveBtn">保存配置</button><button class="save primary" id="testSaveBtn">测试并保存</button></div>
+  </div>
+  <script src="settings.js"></script>
+</body>
+</html>
