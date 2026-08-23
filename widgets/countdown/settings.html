@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>目标日期设置</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; color: #182238; }
+    .window { width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: rgba(248,251,255,.985); border: 1px solid rgba(255,255,255,.88); box-shadow: 0 22px 58px rgba(25,45,73,.28); display: grid; grid-template-rows: 72px 1fr 76px; }
+    header { padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(130deg,#eaf6ff,#f7f2ff); -webkit-app-region: drag; }
+    header h1 { margin: 0; font-size: 19px; letter-spacing: .2px; }
+    header p { margin: 5px 0 0; font-size: 10.5px; color: #708099; }
+    .close { width: 32px; height: 32px; border: 0; border-radius: 11px; background: rgba(38,63,96,.08); color: #57657b; font-size: 18px; cursor: pointer; -webkit-app-region: no-drag; }
+    .close:hover { background: rgba(223,64,72,.11); color: #d73e47; }
+    main { min-height: 0; overflow: auto; padding: 18px 22px 24px; }
+    .shared { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; margin-bottom: 16px; border-radius: 13px; color: #416482; background: rgba(49,159,232,.09); font-size: 11px; line-height: 1.55; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin: 0 1px 10px; }
+    .section-head h2, .choose h2 { margin: 0; font-size: 13px; }
+    .add { border: 0; border-radius: 10px; padding: 8px 12px; color: #fff; background: linear-gradient(135deg,#4cb0ed,#328bd8); font-weight: 760; font-size: 11px; cursor: pointer; box-shadow: 0 5px 13px rgba(42,142,211,.22); }
+    #targetList { display: grid; gap: 9px; }
+    .target { display: grid; grid-template-columns: 31px minmax(0,1fr) 148px 31px; gap: 8px; align-items: center; padding: 10px; border-radius: 14px; background: #fff; border: 1px solid rgba(37,61,93,.08); box-shadow: 0 5px 15px rgba(39,62,93,.06); }
+    input[type="color"] { width: 30px; height: 30px; border: 0; padding: 0; border-radius: 10px; overflow: hidden; background: transparent; cursor: pointer; }
+    input[type="text"], input[type="date"], select { width: 100%; height: 34px; border: 1px solid rgba(39,65,100,.13); border-radius: 9px; padding: 0 10px; outline: none; color: #1a263b; background: #f8fafc; font: 11.5px "Microsoft YaHei"; }
+    input:focus, select:focus { border-color: rgba(49,159,232,.56); box-shadow: 0 0 0 3px rgba(49,159,232,.1); }
+    .delete { width: 30px; height: 30px; border: 0; border-radius: 9px; color: #c85a62; background: rgba(219,67,76,.08); cursor: pointer; font-size: 16px; }
+    .empty { padding: 24px; text-align: center; border: 1px dashed rgba(46,73,107,.18); border-radius: 14px; color: #8793a5; font-size: 11px; }
+    .choose { margin-top: 18px; padding: 14px; border-radius: 15px; background: linear-gradient(135deg,rgba(235,246,255,.9),rgba(246,241,255,.85)); border: 1px solid rgba(59,99,145,.08); }
+    .choose h2 { margin-bottom: 10px; }
+    .select-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; }
+    .select-grid.single { grid-template-columns: 1fr; }
+    label span { display: block; margin: 0 0 5px 3px; color: #75849a; font-size: 9.5px; }
+    footer { padding: 14px 22px; display: flex; align-items: center; gap: 12px; border-top: 1px solid rgba(38,62,94,.08); background: rgba(255,255,255,.7); }
+    #status { flex: 1; color: #718097; font-size: 10.5px; }
+    .save { min-width: 126px; height: 43px; border: 0; border-radius: 13px; color: #fff; background: linear-gradient(135deg,#4facdf,#6f7be8); box-shadow: 0 9px 20px rgba(68,119,207,.25); font-size: 13px; font-weight: 800; cursor: pointer; }
+    .save:hover { filter: brightness(1.04); }
+    ::-webkit-scrollbar { width: 7px; } ::-webkit-scrollbar-thumb { background: rgba(55,83,119,.18); border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <section class="window">
+    <header>
+      <div><h1>目标日期</h1><p>保存重要日子，并在两个倒数日组件之间共享</p></div>
+      <button class="close" id="closeBtn" type="button">×</button>
+    </header>
+    <main>
+      <div class="shared"><span>↔</span><span>这里的日期库是共享的：在任意一个倒数日组件里添加、修改或删除后，其他倒数日组件会立即同步。</span></div>
+      <div class="section-head"><h2>已保存的目标日期</h2><button class="add" id="addBtn" type="button">＋ 添加目标</button></div>
+      <div id="targetList"></div>
+      <section class="choose" id="chooseSection"><h2 id="chooseTitle">当前显示</h2><div class="select-grid" id="selectGrid"></div></section>
+    </main>
+    <footer><div id="status">名称和日期都会保存在本机配置中</div><button class="save" id="saveBtn" type="button">保存全部设置</button></footer>
+  </section>
+  <script src="settings.js"></script>
+</body>
+</html>

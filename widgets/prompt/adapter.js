@@ -1,317 +1,301 @@
-// AI 提示词优化组件 —— 主进程适配层
-// 密钥只保存在用户自己的 %APPDATA%\Widgetly\config.json，渲染进程永远拿不到原文。
-const { ipcMain, Menu, BrowserWindow, screen, safeStorage } = require('electron');
-const path = require('path');
-const http = require('http');
-const https = require('https');
+// Widgetly AI 提示词优化组件：轻量壳 + 按需加载的 Prompt Optimizer v2.11.8 工作台。
+const { ipcMain, Menu, screen } = require('electron');
 
-const DEFAULTS = { bgOpacity: 0.4, pinned: false, locked: false, width: 360, height: 410, strength: 1, displayMode: 'large' };
-const AI_DEFAULTS = { baseUrl: 'https://api.openai.com/v1', model: '' };
-const MODE_SIZES = {
-  small: { width: 320, height: 270 },
-  medium: { width: 350, height: 350 },
-  large: { width: 360, height: 410 },
+const MINI_SIZE = { w: 360, h: 150 };
+const RESULT_SIZE = { w: 360, h: 330 };
+const WORKSPACE_DEFAULT = { w: 1180, h: 760 };
+const WIDGET_LIMITS = {
+  minWidth: 300,
+  maxWidth: 760,
+  minMiniHeight: 128,
+  maxMiniHeight: 420,
+  minResultHeight: 300,
+  maxResultHeight: 760,
 };
-const HISTORY_LIMIT = 30;
+const controllers = new Map();
+let activeWorkspaceId = null;
 
 function clamp(value, min, max, fallback) {
   const n = Number(value);
-  return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback;
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
 }
-function displayMode(value) { return ['small', 'medium', 'large'].includes(value) ? value : 'large'; }
-function storedApiKey(raw = {}) {
-  if (raw.apiKeyEncrypted) {
-    try {
-      if (safeStorage.isEncryptionAvailable()) return safeStorage.decryptString(Buffer.from(String(raw.apiKeyEncrypted), 'base64'));
-    } catch (_) {}
+function trimText(value, max) {
+  return String(value || '').slice(0, max);
+}
+
+function expectedSize(instance, base) {
+  if (!instance || instance.widgetId !== 'promptOptimizer') return base;
+  if (instance._promptWorkspaceMode === 'visible' && instance._promptWorkspaceSize) {
+    return { ...instance._promptWorkspaceSize };
   }
-  // 兼容未来可能存在的旧版明文配置；下次“测试并保存”会自动迁移到系统加密存储。
-  return String(raw.apiKey || '');
-}
-function cleanConfig(raw = {}) {
-  const baseUrl = String(raw.baseUrl || '').trim().replace(/\/+$/, '');
-  const model = String(raw.model || '').trim();
-  const apiKey = storedApiKey(raw).trim();
-  return { baseUrl, model, apiKey };
-}
-function configForStorage(config) {
-  const out = { baseUrl: config.baseUrl, model: config.model };
-  try {
-    if (safeStorage.isEncryptionAvailable()) {
-      out.apiKeyEncrypted = safeStorage.encryptString(config.apiKey).toString('base64');
-      return out;
-    }
-  } catch (_) {}
-  // 极少数系统无法使用 Electron 的 Windows 安全存储时，保留可用性；界面会提示用户密钥仅存本机。
-  out.apiKey = config.apiKey;
-  return out;
-}
-function publicAIConfig() {
-  const saved = cleanConfig((global.__cfg && global.__cfg.aiPrompt) || {});
-  return { baseUrl: saved.baseUrl || AI_DEFAULTS.baseUrl, model: saved.model, hasApiKey: !!saved.apiKey };
-}
-function apiEndpoint(baseUrl) {
-  const cleaned = String(baseUrl || '').trim().replace(/\/+$/, '');
-  if (!cleaned) throw new Error('请填写 API 地址');
-  return /\/chat\/completions$/i.test(cleaned) ? cleaned : cleaned + '/chat/completions';
-}
-function postJSON(urlString, headers, body) {
-  return new Promise((resolve, reject) => {
-    let target;
-    try { target = new URL(urlString); } catch (_) { reject(new Error('API 地址格式不正确')); return; }
-    const transport = target.protocol === 'http:' ? http : https;
-    if (!transport) { reject(new Error('仅支持 http 或 https API 地址')); return; }
-    const payload = JSON.stringify(body);
-    const req = transport.request({
-      protocol: target.protocol,
-      hostname: target.hostname,
-      port: target.port || undefined,
-      path: target.pathname + target.search,
-      method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
-      timeout: 45000,
-    }, (res) => {
-      let buf = '';
-      res.setEncoding('utf8');
-      res.on('data', (chunk) => { buf += chunk; });
-      res.on('end', () => {
-        let parsed = null;
-        try { parsed = JSON.parse(buf); } catch (_) {}
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          const remote = parsed && parsed.error && (parsed.error.message || parsed.error.code);
-          reject(new Error(`AI 服务返回 ${res.statusCode}${remote ? '：' + String(remote).slice(0, 240) : ''}`));
-          return;
-        }
-        resolve(parsed);
-      });
-    });
-    req.on('timeout', () => req.destroy(new Error('连接 AI 服务超时（45 秒）')));
-    req.on('error', (err) => reject(new Error('无法连接 AI 服务：' + (err && err.message ? err.message : '未知网络错误'))));
-    req.write(payload);
-    req.end();
-  });
-}
-function instructionFor(level) {
-  if (level === 1) return [
-    '你是中文 AI 提示词润色助手。',
-    '只做轻度润色：不改变用户真实意图、不补造需求、不扩大任务范围。',
-    '把口语化、重复或含混的表达改成自然、清楚、可直接交给 AI 的指令。',
-    '只输出润色后的提示词正文，不要解释、标题、问题或 Markdown 围栏。',
-  ].join('\n');
-  if (level === 2) return [
-    '你是中文 AI 提示词优化助手。',
-    '在不偏离原意的前提下，补足任务目标、必要上下文、输出要求和可执行步骤，让 AI 更容易一次做好。',
-    '先输出“【优化后的提示词】”，再给出可直接使用的完整提示词。',
-    '仅当缺失的信息会明显影响结果时，在最后输出“【可选确认问题】”，最多 2 个简短问题；否则不要该段。',
-    '不得捏造用户未提供的事实、数据、身份或约束。',
-  ].join('\n');
-  return [
-    '你是资深中文 AI 指令设计师。把用户原话改造成能让 AI 清晰理解、直接执行、尽量高效产出的高质量提示词。',
-    '先准确提炼目标、背景、边界、交付物、格式、质量标准和执行顺序；消除歧义，但绝不能编造事实。',
-    '输出结构固定为：\n【可直接使用的提示词】\n（完整、具体、可执行的指令）',
-    '只有在关键信息缺失且会改变执行结果时，再附：\n【需要确认的问题】\n（不超过 3 个最关键、可回答的问题）。',
-    '如果信息足够，就不要提问。不要输出分析过程、免责声明或无关建议。',
-  ].join('\n');
-}
-async function runChat(config, messages, maxTokens = 1400) {
-  if (!config.apiKey) throw new Error('请先配置 API Key');
-  if (!config.model) throw new Error('请填写模型名称，例如 gpt-4o-mini');
-  const body = {
-    model: config.model,
-    messages,
-    temperature: 0.35,
-    max_tokens: maxTokens,
+  const cfg = instance.config || {};
+  const width = Math.round(clamp(cfg.widgetWidth, WIDGET_LIMITS.minWidth, WIDGET_LIMITS.maxWidth, MINI_SIZE.w));
+  if (instance._promptResultExpanded) {
+    return {
+      w: width,
+      h: Math.round(clamp(cfg.resultHeight, WIDGET_LIMITS.minResultHeight, WIDGET_LIMITS.maxResultHeight, RESULT_SIZE.h)),
+    };
+  }
+  return {
+    w: width,
+    h: Math.round(clamp(cfg.miniHeight, WIDGET_LIMITS.minMiniHeight, WIDGET_LIMITS.maxMiniHeight, MINI_SIZE.h)),
   };
-  const response = await postJSON(apiEndpoint(config.baseUrl), { Authorization: 'Bearer ' + config.apiKey }, body);
-  const text = response && response.choices && response.choices[0] && response.choices[0].message && response.choices[0].message.content;
-  if (!text || !String(text).trim()) throw new Error('AI 服务未返回可用内容，请检查模型和接口设置');
-  return String(text).trim();
 }
 
 function setup({ instance, win, save }) {
   const instId = instance.id;
-  const saved = { ...DEFAULTS, ...(instance.config || {}) };
-  let bgOpacity = typeof saved.bgOpacity === 'number' ? Math.max(0, Math.min(1, saved.bgOpacity)) : DEFAULTS.bgOpacity;
-  let pinned = !!saved.pinned;
-  let locked = !!saved.locked;
-  let width = clamp(saved.width, 320, 760, DEFAULTS.width);
-  let height = clamp(saved.height, 240, 860, DEFAULTS.height);
-  let mode = displayMode(saved.displayMode);
-  let history = Array.isArray(saved.history) ? saved.history.filter((x) => x && typeof x === 'object').slice(0, HISTORY_LIMIT) : [];
-  let historyWin = null;
-  let configWin = null;
+  const listeners = [];
+  const handlers = [];
+  let resizeSaveTimer = null;
+  instance.config = instance.config || {};
 
+  // 这些字段只参与当前窗口的尺寸计算，不能被 saveConfig 写入用户配置。
+  delete instance._promptResultExpanded;
+  delete instance._promptWorkspaceMode;
+  delete instance._promptWorkspaceSize;
+  function setRuntime(key, value) {
+    Object.defineProperty(instance, key, {
+      value,
+      writable: true,
+      configurable: true,
+      enumerable: false,
+    });
+  }
+
+  let cfg = {
+    bgOpacity: clamp(instance.config.bgOpacity, 0, 1, 0.4),
+    strength: Math.round(clamp(instance.config.strength, 1, 3, 1)),
+    pinned: !!instance.config.pinned,
+    locked: !!instance.config.locked,
+    draft: trimText(instance.config.draft, 16000),
+    lastResult: trimText(instance.config.lastResult, 24000),
+    widgetWidth: Math.round(clamp(instance.config.widgetWidth, WIDGET_LIMITS.minWidth, WIDGET_LIMITS.maxWidth, MINI_SIZE.w)),
+    miniHeight: Math.round(clamp(instance.config.miniHeight, WIDGET_LIMITS.minMiniHeight, WIDGET_LIMITS.maxMiniHeight, MINI_SIZE.h)),
+    resultHeight: Math.round(clamp(instance.config.resultHeight, WIDGET_LIMITS.minResultHeight, WIDGET_LIMITS.maxResultHeight, RESULT_SIZE.h)),
+  };
+  let workspaceMode = 'closed';
+  let miniBounds = null;
+  let workspaceBounds = null;
+  let resultExpanded = !!cfg.lastResult;
+  setRuntime('_promptResultExpanded', resultExpanded);
+  setRuntime('_promptWorkspaceMode', 'closed');
+  setRuntime('_promptWorkspaceSize', null);
+
+  function on(channel, fn) {
+    ipcMain.on(channel, fn);
+    listeners.push({ channel, fn });
+  }
+  function handle(channel, fn) {
+    ipcMain.removeHandler(channel);
+    ipcMain.handle(channel, fn);
+    handlers.push(channel);
+  }
   function persist() {
-    instance.config = { ...(instance.config || {}), bgOpacity, pinned, locked, width, height, displayMode: mode, history };
+    instance.config = { ...(instance.config || {}), ...cfg };
     save();
   }
-  function state() { return { bgOpacity, pinned, locked, width, height, displayMode: mode, strength: clamp(instance.config && instance.config.strength, 1, 3, 1), ai: publicAIConfig() }; }
-  function push() { if (win && !win.isDestroyed()) win.webContents.send('prompt:state:' + instId, state()); }
-  function quitWidget() {
-    global.__cfg.instances = global.__cfg.instances.filter((x) => x.id !== instId);
-    save();
-    if (win && !win.isDestroyed()) win.close();
+  function state() {
+    return {
+      ...cfg,
+      workspaceMode,
+      resultExpanded,
+      upstreamVersion: '2.11.8',
+      sourceUrl: 'https://github.com/linshenkx/prompt-optimizer',
+    };
   }
-  function openConfig() {
-    if (configWin && !configWin.isDestroyed()) { configWin.focus(); return; }
-    const wa = screen.getPrimaryDisplay().workArea;
-    configWin = new BrowserWindow({
-      width: 430, height: 558,
-      x: wa.x + Math.max(0, Math.round((wa.width - 430) / 2)), y: wa.y + Math.max(0, Math.round((wa.height - 558) / 2)),
-      frame: false, transparent: true, resizable: false, maximizable: false, minimizable: false, fullscreenable: false,
-      skipTaskbar: false, alwaysOnTop: true, hasShadow: false, backgroundColor: '#00000000',
-      webPreferences: { nodeIntegration: true, contextIsolation: false },
-    });
-    configWin.loadFile(path.join(__dirname, 'settings.html'), { query: { inst: instId } });
-    configWin.on('closed', () => { configWin = null; });
+  function pushState() {
+    if (!win.isDestroyed()) win.webContents.send(`prompt:state:${instId}`, state());
   }
-  function openHistory() {
-    if (historyWin && !historyWin.isDestroyed()) { historyWin.focus(); return; }
-    const wa = screen.getPrimaryDisplay().workArea;
-    historyWin = new BrowserWindow({
-      width: 470, height: 600,
-      x: wa.x + Math.max(0, Math.round((wa.width - 470) / 2)), y: wa.y + Math.max(0, Math.round((wa.height - 600) / 2)),
-      frame: false, transparent: true, resizable: false, maximizable: false, minimizable: false, fullscreenable: false,
-      skipTaskbar: false, alwaysOnTop: true, hasShadow: false, backgroundColor: '#00000000',
-      webPreferences: { nodeIntegration: true, contextIsolation: false },
-    });
-    historyWin.loadFile(path.join(__dirname, 'history.html'), { query: { inst: instId } });
-    historyWin.on('closed', () => { historyWin = null; });
-  }
-  function addHistory(source, context, strength, text) {
-    history.unshift({
-      id: 'h' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-      time: new Date().toISOString(), strength: clamp(strength, 1, 3, 1),
-      source: String(source || '').slice(0, 6000), context: String(context || '').slice(0, 3000), text: String(text || '').slice(0, 9000),
-    });
-    history = history.slice(0, HISTORY_LIMIT);
-    persist();
-  }
-  function setMode(nextMode) {
-    mode = displayMode(nextMode);
-    const preset = MODE_SIZES[mode];
-    width = preset.width; height = preset.height;
-    if (win && !win.isDestroyed()) {
-      const [x, y] = win.getPosition();
-      win.setBounds({ x, y, width, height });
-    }
-    persist(); push();
-  }
-  function menu() {
-    if (!win.isFocused()) win.focus();
-    try {
-      Menu.buildFromTemplate([
-        { label: 'AI 与组件设置…', click: openConfig },
-        { label: '历史对话…', click: openHistory },
-        { label: '组件形态', submenu: [
-          { label: '小形态（紧凑对话）', type: 'radio', checked: mode === 'small', click: () => setMode('small') },
-          { label: '中形态（紧凑编辑）', type: 'radio', checked: mode === 'medium', click: () => setMode('medium') },
-          { label: '大形态（完整工作台）', type: 'radio', checked: mode === 'large', click: () => setMode('large') },
-        ] },
-        { label: '优化强度', submenu: [1, 2, 3].map((value) => ({
-          label: ['轻度：只润色', '增强：更清楚', '深度：完整指令'][value - 1], type: 'radio',
-          checked: clamp(instance.config && instance.config.strength, 1, 3, 1) === value,
-          click: () => { instance.config = { ...(instance.config || {}), strength: value }; save(); push(); },
-        })) },
-        { type: 'separator' },
-        { label: '背景透明度…', click: () => win.webContents.send('show-opacity-panel:' + instId) },
-        { label: '置顶显示', type: 'checkbox', checked: pinned, click: () => { pinned = !pinned; win.setAlwaysOnTop(pinned, 'floating'); persist(); push(); } },
-        { label: '锁定位置', type: 'checkbox', checked: locked, click: () => { locked = !locked; persist(); push(); } },
-        { type: 'separator' },
-        { label: '退出此组件', click: quitWidget },
-      ]).popup({ window: win });
-    } catch (_) {}
-  }
-
-  ipcMain.handle('prompt:init:' + instId, () => state());
-  ipcMain.on('prompt:menu:' + instId, menu);
-  ipcMain.on('prompt:configure:' + instId, openConfig);
-  ipcMain.on('prompt:history-open:' + instId, openHistory);
-  ipcMain.on('prompt:bg-opacity:' + instId, (_e, value) => {
-    if (typeof value !== 'number') return;
-    bgOpacity = Math.max(0, Math.min(1, value));
-    persist(); push();
-  });
-  ipcMain.on('prompt:strength:' + instId, (_e, value) => {
-    const strength = clamp(value, 1, 3, 1);
-    instance.config = { ...(instance.config || {}), strength };
-    save(); push();
-  });
-  ipcMain.on('prompt:display-mode:' + instId, (_e, value) => setMode(value));
-  ipcMain.on('prompt:resize:' + instId, (_e, size) => {
-    width = clamp(size && size.width, 320, 760, width);
-    height = clamp(size && size.height, 240, 860, height);
-    if (!win || win.isDestroyed()) return;
-    const [x, y] = win.getPosition();
-    win.setBounds({ x, y, width, height });
-    persist();
-  });
-  ipcMain.handle('prompt:optimize:' + instId, async (_e, payload) => {
-    const source = String(payload && payload.source || '').trim().slice(0, 16000);
-    const context = String(payload && payload.context || '').trim().slice(0, 6000);
-    const level = clamp(payload && payload.level, 1, 3, 1);
-    if (!source) return { ok: false, error: '先粘贴或输入需要优化的内容' };
-    try {
-      const userText = context
-        ? `用户原始内容：\n${source}\n\n用户补充说明（请一并考虑）：\n${context}`
-        : `用户原始内容：\n${source}`;
-      const text = await runChat(cleanConfig((global.__cfg && global.__cfg.aiPrompt) || {}), [
-        { role: 'system', content: instructionFor(level) },
-        { role: 'user', content: userText },
-      ]);
-      addHistory(source, context, level, text);
-      return { ok: true, text };
-    } catch (err) {
-      return { ok: false, error: err && err.message ? err.message : '优化失败，请检查 AI 配置' };
-    }
-  });
-  ipcMain.handle('prompt:ai-config:' + instId, () => ({ ...publicAIConfig(), strength: clamp(instance.config && instance.config.strength, 1, 3, 1), displayMode: mode }));
-  ipcMain.handle('prompt:ai-config-save:' + instId, async (_e, raw) => {
-    const old = cleanConfig((global.__cfg && global.__cfg.aiPrompt) || {});
-    const incoming = cleanConfig(raw || {});
-    const config = { baseUrl: incoming.baseUrl || old.baseUrl || AI_DEFAULTS.baseUrl, model: incoming.model, apiKey: incoming.apiKey || old.apiKey };
-    if (!config.apiKey) return { ok: false, error: '请填写 API Key' };
-    if (!config.model) return { ok: false, error: '请填写模型名称' };
-    try {
-      if (raw && raw.test) await runChat(config, [{ role: 'user', content: '请只回复：连接成功' }], 16);
-      global.__cfg.aiPrompt = configForStorage(config);
-      save();
-      push();
-      return { ok: true, tested: !!(raw && raw.test) };
-    } catch (err) {
-      return { ok: false, error: err && err.message ? err.message : '连接测试失败' };
-    }
-  });
-  ipcMain.handle('prompt:history-get:' + instId, () => history.map((x) => ({ ...x })));
-  ipcMain.on('prompt:history-use:' + instId, (_e, id) => {
-    const item = history.find((x) => x.id === id);
-    if (!item) return;
-    if (win && !win.isDestroyed()) win.webContents.send('prompt:history-load:' + instId, { source: item.source, context: item.context, strength: item.strength });
-    if (historyWin && !historyWin.isDestroyed()) historyWin.close();
-  });
-  ipcMain.on('prompt:history-delete:' + instId, (_e, id) => {
-    history = history.filter((x) => x.id !== id); persist();
-    if (historyWin && !historyWin.isDestroyed()) historyWin.webContents.send('prompt:history-changed:' + instId);
-  });
-  ipcMain.on('prompt:history-clear:' + instId, () => {
-    history = []; persist();
-    if (historyWin && !historyWin.isDestroyed()) historyWin.webContents.send('prompt:history-changed:' + instId);
-  });
-  ipcMain.on('prompt:history-close:' + instId, () => { if (historyWin && !historyWin.isDestroyed()) historyWin.close(); });
-  ipcMain.on('prompt:settings-close:' + instId, () => { if (configWin && !configWin.isDestroyed()) configWin.close(); });
-
-  // 菜单由 renderer 在右键按下阶段主动发送 prompt:menu，避免 textarea/Windows
-  // 原生右键菜单和 Electron context-menu 事件在不同机器上互相抢占。
-  win.webContents.on('did-finish-load', push);
-  win.on('resize', () => {
+  function setBoundsKeepingPosition(size) {
     if (win.isDestroyed()) return;
-    const [nextW, nextH] = win.getSize();
-    const nextWidth = clamp(nextW, 320, 760, width);
-    const nextHeight = clamp(nextH, 240, 860, height);
-    if (nextWidth !== width || nextHeight !== height) { width = nextWidth; height = nextHeight; persist(); }
+    const [x, y] = win.getPosition();
+    // Windows 会按上一形态的 min/max 拒绝跨形态缩放（例如结果 330px → 小窗 150px）。
+    // 先临时放宽约束，设置完成后由调用方重新应用当前形态的限制。
+    win.setMinimumSize(1, 1);
+    win.setMaximumSize(10000, 10000);
+    win.setBounds({ x, y, width: size.w, height: size.h });
+  }
+  function applyWidgetResizeLimits() {
+    if (win.isDestroyed()) return;
+    win.setResizable(true);
+    win.setMinimumSize(WIDGET_LIMITS.minWidth, resultExpanded ? WIDGET_LIMITS.minResultHeight : WIDGET_LIMITS.minMiniHeight);
+    win.setMaximumSize(WIDGET_LIMITS.maxWidth, resultExpanded ? WIDGET_LIMITS.maxResultHeight : WIDGET_LIMITS.maxMiniHeight);
+  }
+  function setResultExpanded(expanded) {
+    const nextExpanded = !!expanded;
+    // 快速优化完成时，renderer 会连续发出“关闭按需工作台”和“展开结果”。
+    // 两个 IPC 频道在极端情况下可能交错；这里把结果展开做成原子动作，
+    // 防止状态已经是 expanded、窗口却仍停在小形态高度。
+    if (nextExpanded && workspaceMode !== 'closed') closeWorkspace();
+    resultExpanded = nextExpanded;
+    setRuntime('_promptResultExpanded', resultExpanded);
+    if (workspaceMode === 'closed') {
+      setBoundsKeepingPosition({
+        w: cfg.widgetWidth,
+        h: resultExpanded ? cfg.resultHeight : cfg.miniHeight,
+      });
+      applyWidgetResizeLimits();
+    }
+    pushState();
+  }
+  function restoreWidgetWindow() {
+    if (win.isDestroyed()) return;
+    win.setMaximizable(false);
+    win.setMinimizable(false);
+    win.setSkipTaskbar(true);
+    win.setAlwaysOnTop(!!cfg.pinned, cfg.pinned ? 'floating' : 'normal');
+    const fallback = {
+      w: cfg.widgetWidth,
+      h: resultExpanded ? cfg.resultHeight : cfg.miniHeight,
+    };
+    const current = miniBounds || { ...win.getBounds(), width: fallback.w, height: fallback.h };
+    win.setMinimumSize(1, 1);
+    win.setMaximumSize(10000, 10000);
+    win.setBounds({ x: current.x, y: current.y, width: fallback.w, height: fallback.h });
+    applyWidgetResizeLimits();
+  }
+  function closeWorkspace({ notify = false } = {}) {
+    if (workspaceMode === 'closed') return;
+    workspaceMode = 'closed';
+    setRuntime('_promptWorkspaceMode', 'closed');
+    setRuntime('_promptWorkspaceSize', null);
+    if (activeWorkspaceId === instId) activeWorkspaceId = null;
+    restoreWidgetWindow();
+    if (notify && !win.isDestroyed()) win.webContents.send(`prompt:force-mini:${instId}`);
+    pushState();
+  }
+  function claimWorkspace() {
+    if (activeWorkspaceId && activeWorkspaceId !== instId) {
+      const previous = controllers.get(activeWorkspaceId);
+      if (previous) previous.closeWorkspace({ notify: true });
+    }
+    activeWorkspaceId = instId;
+  }
+  function openWorkspace(mode) {
+    if (win.isDestroyed()) return;
+    claimWorkspace();
+    if (workspaceMode === 'closed') miniBounds = win.getBounds();
+    workspaceMode = mode === 'quick' ? 'quick' : 'visible';
+    setRuntime('_promptWorkspaceMode', workspaceMode);
+    if (workspaceMode === 'visible') {
+      const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+      const wa = display.workArea;
+      const w = Math.min(WORKSPACE_DEFAULT.w, Math.max(760, wa.width - 60));
+      const h = Math.min(WORKSPACE_DEFAULT.h, Math.max(560, wa.height - 60));
+      const previous = workspaceBounds || {};
+      const x = Number.isFinite(previous.x) ? previous.x : wa.x + Math.round((wa.width - w) / 2);
+      const y = Number.isFinite(previous.y) ? previous.y : wa.y + Math.round((wa.height - h) / 2);
+      win.setResizable(true);
+      win.setMaximumSize(10000, 10000);
+      win.setMinimumSize(760, 560);
+      win.setMaximizable(true);
+      win.setMinimizable(true);
+      win.setSkipTaskbar(false);
+      win.setAlwaysOnTop(false);
+      win.setBounds({ x, y, width: w, height: h });
+      setRuntime('_promptWorkspaceSize', { w, h });
+      win.show();
+      win.focus();
+    }
+    pushState();
+  }
+  function quitWidget() {
+    global.__cfg.instances = global.__cfg.instances.filter((item) => item.id !== instId);
+    save();
+    if (!win.isDestroyed()) win.close();
+  }
+  function openModelSettings() {
+    openWorkspace('visible');
+    win.webContents.send(`prompt:open-model-settings:${instId}`);
+  }
+  function openMenu() {
+    if (win.isDestroyed()) return;
+    const transparent = Math.round((1 - cfg.bgOpacity) * 100);
+    Menu.buildFromTemplate([
+      { label: '打开专业工作台', click: () => openWorkspace('visible') },
+      { label: '配置 AI 模型…', click: openModelSettings },
+      { label: '优化强度', submenu: [
+        { label: '强度 1 · 基础润色', type: 'radio', checked: cfg.strength === 1, click: () => setStrength(1) },
+        { label: '强度 2 · 结构增强', type: 'radio', checked: cfg.strength === 2, click: () => setStrength(2) },
+        { label: '强度 3 · 专家重构', type: 'radio', checked: cfg.strength === 3, click: () => setStrength(3) },
+      ] },
+      { type: 'separator' },
+      { label: `背景透明度…（${transparent}%）`, click: () => win.webContents.send(`prompt:show-opacity:${instId}`) },
+      { label: '置顶显示', type: 'checkbox', checked: cfg.pinned, click: (item) => {
+        cfg.pinned = !!item.checked;
+        if (workspaceMode !== 'visible') win.setAlwaysOnTop(cfg.pinned, cfg.pinned ? 'floating' : 'normal');
+        persist(); pushState();
+      } },
+      { label: cfg.locked ? '解锁位置' : '锁定位置', click: () => {
+        cfg.locked = !cfg.locked;
+        persist(); pushState();
+      } },
+      { type: 'separator' },
+      { label: '关于开源组件', click: () => win.webContents.send(`prompt:state:${instId}`, { ...state(), showAbout: true }) },
+      { label: '退出此组件', click: quitWidget },
+    ]).popup({ window: win });
+  }
+  function setStrength(value) {
+    cfg.strength = Math.round(clamp(value, 1, 3, 1));
+    persist(); pushState();
+  }
+
+  const controller = { closeWorkspace };
+  controllers.set(instId, controller);
+
+  handle(`prompt:init:${instId}`, () => state());
+  on(`prompt:draft:${instId}`, (_event, draft) => { cfg.draft = trimText(draft, 16000); persist(); });
+  on(`prompt:result:${instId}`, (_event, result) => { cfg.lastResult = trimText(result, 24000); persist(); });
+  on(`prompt:strength:${instId}`, (_event, value) => setStrength(value));
+  on(`prompt:result-expanded:${instId}`, (_event, expanded) => setResultExpanded(expanded));
+  on(`prompt:workspace-open:${instId}`, (_event, mode) => openWorkspace(mode));
+  on(`prompt:workspace-close:${instId}`, () => closeWorkspace());
+  on(`prompt:workspace-minimize:${instId}`, () => { if (!win.isDestroyed() && workspaceMode === 'visible') win.minimize(); });
+  on(`prompt:workspace-maximize:${instId}`, () => {
+    if (win.isDestroyed() || workspaceMode !== 'visible') return;
+    if (win.isMaximized()) win.unmaximize(); else win.maximize();
   });
-  win.on('closed', () => { if (configWin && !configWin.isDestroyed()) configWin.close(); if (historyWin && !historyWin.isDestroyed()) historyWin.close(); });
-  if (pinned) win.setAlwaysOnTop(true, 'floating');
+  on(`prompt:model-settings:${instId}`, openModelSettings);
+  on(`prompt:menu:${instId}`, openMenu);
+  on(`prompt:bg-opacity:${instId}`, (_event, opacity) => {
+    cfg.bgOpacity = clamp(opacity, 0, 1, cfg.bgOpacity);
+    persist(); pushState();
+  });
+
+  win.on('resize', () => {
+    if (win.isDestroyed() || win.isMaximized()) return;
+    const bounds = win.getBounds();
+    if (workspaceMode === 'visible') {
+      workspaceBounds = bounds;
+      setRuntime('_promptWorkspaceSize', { w: bounds.width, h: bounds.height });
+      return;
+    }
+    if (workspaceMode !== 'closed') return;
+    cfg.widgetWidth = Math.round(clamp(bounds.width, WIDGET_LIMITS.minWidth, WIDGET_LIMITS.maxWidth, cfg.widgetWidth));
+    if (resultExpanded) {
+      cfg.resultHeight = Math.round(clamp(bounds.height, WIDGET_LIMITS.minResultHeight, WIDGET_LIMITS.maxResultHeight, cfg.resultHeight));
+    } else {
+      cfg.miniHeight = Math.round(clamp(bounds.height, WIDGET_LIMITS.minMiniHeight, WIDGET_LIMITS.maxMiniHeight, cfg.miniHeight));
+    }
+    // 共享拖动引擎会立即读取 instance.config，因此先更新内存，再防抖保存。
+    instance.config = { ...(instance.config || {}), ...cfg };
+    clearTimeout(resizeSaveTimer);
+    resizeSaveTimer = setTimeout(persist, 220);
+  });
+  win.webContents.on('did-finish-load', pushState);
+  win.on('closed', () => {
+    clearTimeout(resizeSaveTimer);
+    if (activeWorkspaceId === instId) activeWorkspaceId = null;
+    controllers.delete(instId);
+    listeners.forEach(({ channel, fn }) => ipcMain.removeListener(channel, fn));
+    handlers.forEach((channel) => ipcMain.removeHandler(channel));
+  });
+
+  if (cfg.pinned) win.setAlwaysOnTop(true, 'floating');
+  setBoundsKeepingPosition({ w: cfg.widgetWidth, h: resultExpanded ? cfg.resultHeight : cfg.miniHeight });
+  applyWidgetResizeLimits();
+  // 同时清理早期测试构建可能写入配置文件的 `_prompt*` 临时字段。
+  save();
 }
 
-module.exports = { setup };
+module.exports = { MINI_SIZE, RESULT_SIZE, WIDGET_LIMITS, expectedSize, setup };

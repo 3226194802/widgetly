@@ -1,0 +1,71 @@
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+body { font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif; color: var(--text); }
+button { font: inherit; color: inherit; border: 0; }
+:root { --bg: #f7fbff; --text: #142033; --accent: #319fe8; --secondary: #ff9f2e; }
+.card {
+  --surface: rgba(255,255,255,.76);
+  position: relative; width: 100%; height: 100%; overflow: hidden;
+  border-radius: 25px; border: 1px solid rgba(255,255,255,.62);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.22), 0 18px 42px rgba(28,54,82,.18);
+  background: transparent;
+  -webkit-backdrop-filter: blur(10px) saturate(1.2) brightness(1.04);
+  backdrop-filter: blur(10px) saturate(1.2) brightness(1.04);
+  user-select: none;
+  container-type: size;
+  /* Windows 透明窗口的 backdrop-filter 偶尔会在圆角外留下极淡的矩形底色。
+     显式裁切合成层，保证四角是真透明，而不是仅依赖 overflow。 */
+  clip-path: inset(0 round clamp(18px, 9cqw, 30px));
+}
+.glass { display: none; }
+.veil { position: absolute; inset: 0; background: var(--bg); opacity: var(--bg-opacity, .3); }
+.noise { position: absolute; inset: 0; opacity: .17; pointer-events: none; background-image: radial-gradient(rgba(255,255,255,.55) .55px, transparent .65px); background-size: 5px 5px; mix-blend-mode: soft-light; }
+.single-content, .triple-content { position: relative; z-index: 2; width: 100%; height: 100%; }
+
+/* 单目标：顶部标题条 — 主数字 — 今日日期 */
+.single-content { display: grid; grid-template-rows: clamp(46px, 23cqh, 72px) 1fr clamp(19px, 9cqh, 30px) clamp(24px, 12cqh, 36px); padding: clamp(8px, 4.6cqw, 17px); text-align: center; }
+.hero-title {
+  align-self: start; justify-self: stretch; height: clamp(38px, 18.5cqh, 60px); padding: 0 clamp(9px, 6cqw, 20px); border-radius: clamp(12px, 6cqw, 20px);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  color: #fff; background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 86%, white), var(--accent));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 28%, transparent), inset 0 1px rgba(255,255,255,.28);
+  font-size: clamp(13px, 6.8cqw, 21px); font-weight: 820; letter-spacing: .1px; cursor: pointer;
+}
+.hero-title::before { content: ''; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--target-color,rgba(255,255,255,.88)); box-shadow: 0 0 0 3px rgba(255,255,255,.18); }
+.hero-title:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.hero-status { font-size: clamp(11px, 5.6cqw, 17px); font-weight: 650; opacity: .88; }
+.hero-number {
+  align-self: center; margin-top: 1cqh; font-size: clamp(66px, 40cqw, 160px); line-height: .9; font-weight: 850;
+  letter-spacing: -6px; color: var(--text); font-variant-numeric: tabular-nums;
+  text-shadow: 0 4px 18px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.hero-number.long { font-size: clamp(48px, 30cqw, 120px); letter-spacing: -4px; }
+.hero-number.very-long { font-size: clamp(38px, 23cqw, 92px); letter-spacing: -2px; }
+.hero-unit { align-self: center; color: color-mix(in srgb, var(--text) 52%, transparent); font-size: clamp(9px, 4.6cqw, 14px); font-weight: 650; letter-spacing: .6px; }
+.today { align-self: end; color: color-mix(in srgb, var(--text) 49%, transparent); font-size: clamp(8px, 4.4cqw, 13px); font-weight: 560; letter-spacing: .25px; }
+
+/* 三目标：三张浮层条目，每行名称 2/3 + 数字 1/3 */
+.triple-content { padding: clamp(8px, 4.8cqw, 17px); display: grid; grid-template-rows: clamp(29px, 14cqh, 46px) 1fr clamp(15px, 7.5cqh, 24px); gap: clamp(5px, 2.8cqh, 10px); }
+.triple-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.triple-head div { display: flex; align-items: baseline; gap: 8px; }
+.triple-head strong { font-size: clamp(13px, 6.4cqw, 20px); letter-spacing: .3px; }
+.triple-head span { font-size: clamp(7px, 3.8cqw, 12px); color: color-mix(in srgb, var(--text) 43%, transparent); }
+.triple-head button { width: clamp(24px, 11.2cqw, 36px); height: clamp(24px, 11.2cqw, 36px); border-radius: clamp(8px, 4cqw, 13px); background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); font-size: clamp(17px, 8cqw, 25px); line-height: 1; cursor: pointer; }
+.triple-head button:hover { background: color-mix(in srgb, var(--accent) 23%, transparent); }
+.count-list { display: grid; grid-template-rows: repeat(3, 1fr); gap: clamp(6px, 3.5cqh, 12px); min-height: 0; }
+.count-row {
+  --row-accent: var(--accent); position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) clamp(62px, 32.8cqw, 132px);
+  min-height: 0; padding: 0; border-radius: clamp(11px, 5.6cqw, 18px); background: rgba(255,255,255,.73); cursor: pointer;
+  box-shadow: 0 7px 19px rgba(42,67,93,.11), inset 0 0 0 1px rgba(255,255,255,.62);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.count-row:hover { transform: translateY(-1px); box-shadow: 0 9px 23px rgba(42,67,93,.16), inset 0 0 0 1px rgba(255,255,255,.8); }
+.count-row:active { transform: scale(.985); }
+.row-name { min-width: 0; padding: 0 clamp(8px, 4.4cqw, 15px); display: flex; align-items: center; gap: clamp(5px, 2.8cqw, 9px); text-align: left; font-size: clamp(10px, 5.2cqw, 16px); font-weight: 760; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-name::before { content: ''; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--target-color,var(--row-accent)); box-shadow: 0 0 0 3px color-mix(in srgb,var(--target-color,var(--row-accent)) 14%,transparent); }
+.row-number { display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(135deg, color-mix(in srgb, var(--row-accent) 82%, white), var(--row-accent)); font-size: clamp(19px, 10cqw, 34px); font-weight: 850; letter-spacing: -1px; font-variant-numeric: tabular-nums; box-shadow: inset 1px 0 rgba(255,255,255,.32); }
+.row-number.long { font-size: clamp(15px, 7.6cqw, 26px); }
+.row-number.very-long { font-size: clamp(12px, 6cqw, 20px); }
+.triple-today { align-self: end; text-align: center; color: color-mix(in srgb, var(--text) 43%, transparent); font-size: clamp(7.5px, 3.8cqw, 12px); font-weight: 560; letter-spacing: .25px; }
+
+@media (prefers-reduced-motion: reduce) { .hero-title, .count-row { transition: none; } }

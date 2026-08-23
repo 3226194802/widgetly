@@ -1,6 +1,6 @@
 // Widgetly 组件坞 —— 主进程
 // 单进程管理：管理器窗口 + 组件窗口（多实例）+ 系统托盘 + 共享引擎（壁纸/拖动/配置）
-const { app, BrowserWindow, ipcMain, Tray, Menu, screen, desktopCapturer, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, screen, desktopCapturer, shell, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -91,6 +91,7 @@ const memoryAdapter = require('./widgets/memory/adapter.js');
 const sysmonAdapter = require('./widgets/sysmon/adapter.js');
 const clock2Adapter = require('./widgets/clock2/adapter.js');
 const weatherAdapter = require('./widgets/weather/adapter.js');
+const countdownAdapter = require('./widgets/countdown/adapter.js');
 const promptAdapter = require('./widgets/prompt/adapter.js');
 
 const APP_DIR = __dirname;
@@ -137,7 +138,6 @@ const WIDGETS = {
   clock2Sec: { id: 'clock2Sec', name: '数字时钟·带秒', icon: '⏱️', w: 280, h: 148, entry: 'index.html', dir: 'clock2', category: 'clock' },
   weather: { id: 'weather', name: '天气·今日', icon: '🌤️', w: 280, h: 148, entry: 'index.html', category: 'tool' },
   dock: { id: 'dock', name: '弹力文件夹', icon: '🗂️', w: 280, h: 148, entry: 'index.html', category: 'tool' },
-  prompt: { id: 'prompt', name: 'AI 提示词优化', icon: '✨', w: 360, h: 410, entry: 'index.html', category: 'productivity' },
   galleryM: { id: 'galleryM', name: '图库·中', icon: '🖼️', w: 280, h: 148, entry: 'index.html', dir: 'gallery', category: 'tool' },
   calendarBar: { id: 'calendarBar', name: '日历·今日脉搏', icon: '📅', w: 280, h: 148, entry: 'bar.html', dir: 'calendar', category: 'calendar' },
   pomodoroBar: { id: 'pomodoroBar', name: '番茄时钟·中长条', icon: '🍅', w: 280, h: 148, entry: 'bar.html', dir: 'pomodoro', category: 'productivity' },
@@ -157,6 +157,9 @@ const WIDGETS = {
   galleryL: { id: 'galleryL', name: '图库·大', icon: '🖼️', w: 280, h: 280, entry: 'index.html', dir: 'gallery', category: 'tool' },
   calendarSquare: { id: 'calendarSquare', name: '日历·月相月历', icon: '🌙', w: 270, h: 280, entry: 'square.html', dir: 'calendar', category: 'calendar' },
   calendarRing: { id: 'calendarRing', name: '日历·周环', icon: '💫', w: 270, h: 280, entry: 'ring.html', dir: 'calendar', category: 'calendar' },
+  countdownSingle: { id: 'countdownSingle', name: '倒数日·单目标', icon: '⌛', w: 250, h: 260, entry: 'index.html', dir: 'countdown', category: 'calendar' },
+  countdownTriple: { id: 'countdownTriple', name: '倒数日·三目标', icon: '📋', w: 250, h: 260, entry: 'triple.html', dir: 'countdown', category: 'calendar' },
+  promptOptimizer: { id: 'promptOptimizer', name: 'AI 提示词优化', icon: '✦', w: 360, h: 150, entry: 'index.html', dir: 'prompt', category: 'productivity' },
   calendarBig: { id: 'calendarBig', name: '日历·墨滴月历', icon: '🖌️', w: 285, h: 285, entry: 'big.html', dir: 'calendar', category: 'calendar' },
   pomodoro: { id: 'pomodoro', name: '番茄时钟', icon: '🍅', w: 285, h: 285, entry: 'index.html', category: 'productivity' },
   sysmonL: { id: 'sysmonL', name: '系统监测·大', icon: '🖥️', w: 285, h: 285, entry: 'index.html', dir: 'sysmon', category: 'tool' },
@@ -217,8 +220,10 @@ const WIDGET_DEFAULTS = {
   clock2Sec: { hour12: false, theme: 'auto', showSeconds: true, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
   weather: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
   weatherS: { city: '北京', pinned: false, locked: false, customized: false, bgOpacity: 0.4, bgColor: '#1e212a', fontColor: '#f2eee6' },
-  // AI 提示词优化：默认 60% 透明；尺寸由用户在组件右下角自由调整并持久化。
-  prompt: { bgOpacity: 0.4, pinned: false, locked: false, width: 360, height: 410, strength: 1, displayMode: 'large' },
+  // 倒数日组件：默认 80% 透明（背景不透明度 0.2）；两个组件共享全局目标日期库。
+  countdownSingle: { bgOpacity: 0.2, bgColor: '#f7fbff', textColor: '#142033', accentColor: '#319fe8', secondaryColor: '#ff9f2e', pinned: false, locked: false, activeId: '' },
+  countdownTriple: { bgOpacity: 0.2, bgColor: '#f7fbff', textColor: '#142033', accentColor: '#319fe8', secondaryColor: '#ff9f2e', pinned: false, locked: false, slotIds: ['', '', ''] },
+  promptOptimizer: { bgOpacity: 0.4, strength: 1, pinned: false, locked: false, draft: '', lastResult: '' },
 };
 
 // ============ 配置 ============
@@ -251,7 +256,14 @@ function loadConfig() {
       }
     } catch (_) {}
   }
-  return { ...defaultConfig(), ...(c || {}) };
+  const merged = { ...defaultConfig(), ...(c || {}) };
+  // 0.2.14 以前的简易 prompt 组件已经移除；新版使用独立 id promptOptimizer，
+  // 防止旧实例/API 配置意外复活或污染内嵌 Prompt Optimizer 的数据。
+  merged.instances = Array.isArray(merged.instances) ? merged.instances.filter((i) => i && i.widgetId !== 'prompt') : [];
+  if (Array.isArray(merged.widgetOrder)) merged.widgetOrder = merged.widgetOrder.filter((id) => id !== 'prompt');
+  delete merged.aiPrompt;
+  if (!Array.isArray(merged.countdownTargets)) merged.countdownTargets = [];
+  return merged;
 }
 function saveConfig() {
   try {
@@ -483,11 +495,11 @@ function expectedSize(instance) {
     const s = (instance.config && instance.config.size) || 'medium';
     if (launcherAdapter.SIZES[s]) return { w: launcherAdapter.SIZES[s].w, h: launcherAdapter.SIZES[s].h };
   }
-  if (instance.widgetId === 'prompt') {
-    const c = instance.config || {};
-    const width = Number.isFinite(c.width) ? Math.max(320, Math.min(760, Math.round(c.width))) : 360;
-    const height = Number.isFinite(c.height) ? Math.max(240, Math.min(860, Math.round(c.height))) : 410;
-    return { w: width, h: height };
+  if (instance.widgetId === 'promptOptimizer' && promptAdapter.expectedSize) {
+    return promptAdapter.expectedSize(instance, base);
+  }
+  if (String(instance.widgetId).startsWith('countdown') && countdownAdapter.expectedSize) {
+    return countdownAdapter.expectedSize(instance, base);
   }
   return base;
 }
@@ -601,6 +613,8 @@ function createWidgetWindow(instance) {
   const initialSize = expectedSize(instance) || { w: wdef.w, h: wdef.h };
   const [ww, wh] = [initialSize.w, initialSize.h];
 
+  const isPromptOptimizer = instance.widgetId === 'promptOptimizer';
+  const isFreelyResizable = isPromptOptimizer || String(instance.widgetId).startsWith('countdown');
   const win = new BrowserWindow({
     width: ww,
     height: wh,
@@ -608,13 +622,7 @@ function createWidgetWindow(instance) {
     y: instance.y,
     frame: false,
     transparent: true,
-    // AI 提示词组件使用自绘右下角缩放柄；关闭 Windows 原生缩放可杜绝
-    // 无边框窗口双击后被系统自动放大/还原。
-    resizable: false,
-    minWidth: instance.widgetId === 'prompt' ? 320 : undefined,
-    minHeight: instance.widgetId === 'prompt' ? 240 : undefined,
-    maxWidth: instance.widgetId === 'prompt' ? 760 : undefined,
-    maxHeight: instance.widgetId === 'prompt' ? 860 : undefined,
+    resizable: isFreelyResizable,
     maximizable: false,
     minimizable: false,
     fullscreenable: false,
@@ -622,9 +630,30 @@ function createWidgetWindow(instance) {
     skipTaskbar: true,
     hasShadow: false,
     backgroundColor: '#00000000',
-    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    webPreferences: isPromptOptimizer ? {
+      preload: path.join(APP_DIR, 'widgets', 'prompt', 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      // Prompt Optimizer 的纯前端版本直接连接用户选择的 AI 服务商。
+      // 仅此本地、无 Node 权限的窗口关闭 CORS 限制，避免影响其他组件。
+      webSecurity: false,
+      partition: 'persist:widgetly-prompt-optimizer',
+    } : { nodeIntegration: true, contextIsolation: false },
   });
   widgetWins[instance.id] = win;
+  if (isPromptOptimizer) {
+    win.webContents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:/i.test(url)) shell.openExternal(url).catch(() => {});
+      return { action: 'deny' };
+    });
+    win.webContents.on('will-navigate', (event, url) => {
+      if (/^https?:/i.test(url)) {
+        event.preventDefault();
+        shell.openExternal(url).catch(() => {});
+      }
+    });
+  }
   // 显式 setBounds 精确化尺寸（构造函数在高 DPI 下会多 2px，文件夹组件靠此对齐）
   win.setBounds({ x: instance.x, y: instance.y, width: ww, height: wh });
 
@@ -672,7 +701,8 @@ function createWidgetWindow(instance) {
   if (instance.widgetId === 'sysmon' || instance.widgetId === 'sysmonL') sysmonAdapter.setup({ instance, win, save: saveConfig });
   if (String(instance.widgetId).startsWith('clock2')) clock2Adapter.setup({ instance, win, save: saveConfig });
   if (String(instance.widgetId).startsWith('weather')) weatherAdapter.setup({ instance, win, save: saveConfig });
-  if (instance.widgetId === 'prompt') promptAdapter.setup({ instance, win, save: saveConfig });
+  if (String(instance.widgetId).startsWith('countdown')) countdownAdapter.setup({ instance, win, save: saveConfig });
+  if (instance.widgetId === 'promptOptimizer') promptAdapter.setup({ instance, win, save: saveConfig });
 
   win.on('closed', () => { if (widgetWins[instance.id] === win) delete widgetWins[instance.id]; });
   return win;
@@ -939,6 +969,11 @@ ipcMain.on('evt', (e, msg) => {
 // ============ 启动 ============
 app.whenReady().then(async () => {
   global.__cfg = loadConfig();   // screen 就绪后再读配置
+  // 立即落盘升级清理结果，确保被移除的 AI 提示词实例/API 配置不会继续残留在用户配置文件里。
+  saveConfig();
+  // Prompt Optimizer 的构建产物文件名偶尔不会随内部代码变化。
+  // 清理的只是 HTTP/文件缓存，不会触碰该分区中的模型、API Key、历史记录或工作区数据。
+  await session.fromPartition('persist:widgetly-prompt-optimizer').clearCache().catch(() => {});
   // 渲染进程/GPU/子进程异常不会总是触发主进程 uncaughtException，单独记录。
   app.on('render-process-gone', (_event, contents, details) => {
     writeCrashLog('渲染进程异常退出', new Error(details && details.reason ? details.reason : '未知渲染进程异常'), `exitCode=${details && details.exitCode}; webContentsId=${contents && contents.id}`);

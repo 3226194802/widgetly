@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>倒数日外观</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; color: #182238; }
+    .window { width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: rgba(250,252,255,.985); border: 1px solid rgba(255,255,255,.9); box-shadow: 0 22px 56px rgba(25,45,73,.28); display: grid; grid-template-rows: 70px 1fr 64px; }
+    header { padding: 17px 20px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(130deg,#edf8ff,#f5efff); -webkit-app-region: drag; }
+    h1 { margin: 0; font-size: 18px; } header p { margin: 4px 0 0; color: #79879b; font-size: 10px; }
+    button { font-family: inherit; }
+    .close { width: 31px; height: 31px; border: 0; border-radius: 10px; background: rgba(38,63,96,.08); color: #657086; font-size: 18px; cursor: pointer; -webkit-app-region: no-drag; }
+    main { padding: 17px 20px; overflow: auto; }
+    .preview { height: 88px; margin-bottom: 17px; border-radius: 17px; padding: 12px; display: grid; grid-template-columns: 1fr 78px; overflow: hidden; background: var(--bg,#f7fbff); color: var(--text,#142033); box-shadow: 0 8px 22px rgba(37,62,94,.12); }
+    .preview span { display: flex; align-items: center; padding-left: 8px; font-size: 15px; font-weight: 800; }
+    .preview strong { display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #fff; background: var(--accent,#319fe8); font-size: 28px; }
+    .presets { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 18px; }
+    .preset { height: 38px; border: 1px solid rgba(37,62,94,.08); border-radius: 11px; cursor: pointer; font-size: 10px; font-weight: 730; }
+    .preset:hover { transform: translateY(-1px); box-shadow: 0 5px 13px rgba(37,62,94,.12); }
+    .fields { display: grid; gap: 10px; }
+    label { height: 43px; padding: 0 10px 0 12px; display: flex; align-items: center; justify-content: space-between; border-radius: 12px; background: #fff; border: 1px solid rgba(37,62,94,.08); font-size: 11.5px; font-weight: 650; }
+    input[type="color"] { width: 42px; height: 29px; padding: 0; border: 0; border-radius: 9px; overflow: hidden; background: transparent; cursor: pointer; }
+    .range-field { height: 54px; gap: 12px; }
+    .range-box { flex: 1; display: flex; align-items: center; gap: 8px; }
+    input[type="range"] { flex: 1; height: 5px; accent-color: #319fe8; cursor: pointer; }
+    #transparencyValue { width: 34px; text-align: right; color: #278fd7; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+    footer { padding: 11px 20px; display: flex; align-items: center; gap: 10px; border-top: 1px solid rgba(38,62,94,.08); }
+    .reset, .done { height: 39px; border: 0; border-radius: 12px; cursor: pointer; font-size: 11.5px; font-weight: 760; }
+    .reset { flex: 1; color: #5d6b81; background: rgba(45,69,101,.07); }
+    .done { flex: 1.4; color: #fff; background: linear-gradient(135deg,#4facdf,#7478e8); box-shadow: 0 7px 17px rgba(67,111,196,.24); }
+  </style>
+</head>
+<body>
+  <section class="window">
+    <header><div><h1>外观调节</h1><p>为当前倒数日组件选择更舒服的颜色</p></div><button class="close" id="closeBtn" type="button">×</button></header>
+    <main>
+      <div class="preview" id="preview"><span>重要日子</span><strong>132</strong></div>
+      <div class="presets">
+        <button class="preset" data-preset="sky" style="background:#eaf7ff;color:#1d5070">天空</button>
+        <button class="preset" data-preset="violet" style="background:#f2edff;color:#59458b">柔紫</button>
+        <button class="preset" data-preset="mint" style="background:#e9f8f2;color:#24644f">薄荷</button>
+        <button class="preset" data-preset="peach" style="background:#fff1eb;color:#85513d">暖橙</button>
+        <button class="preset" data-preset="night" style="background:#1b2741;color:#f1f5ff">深夜</button>
+        <button class="preset" data-preset="rose" style="background:#fff0f4;color:#7b3d52">玫瑰</button>
+      </div>
+      <div class="fields">
+        <label class="range-field"><span>背景透明度</span><span class="range-box"><input type="range" id="transparency" min="0" max="100" step="1"><output id="transparencyValue">80%</output></span></label>
+        <label>背景基色<input type="color" id="bgColor"></label>
+        <label>主要文字<input type="color" id="textColor"></label>
+        <label>主强调色<input type="color" id="accentColor"></label>
+        <label>辅助强调色<input type="color" id="secondaryColor"></label>
+      </div>
+    </main>
+    <footer><button class="reset" id="resetBtn" type="button">恢复默认</button><button class="done" id="doneBtn" type="button">完成</button></footer>
+  </section>
+  <script src="appearance.js"></script>
+</body>
+</html>

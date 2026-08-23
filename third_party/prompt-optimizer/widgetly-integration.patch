@@ -1,0 +1,322 @@
+diff --git a/packages/ui/src/components/TextModelEditModal.vue b/packages/ui/src/components/TextModelEditModal.vue
+index ee37408..1bffde2 100644
+--- a/packages/ui/src/components/TextModelEditModal.vue
++++ b/packages/ui/src/components/TextModelEditModal.vue
+@@ -203,23 +203,24 @@
+           <NH4 style="margin: 0 0 12px 0; font-size: 14px;">{{ t('modelManager.model.section') }}</NH4>
+ 
+           <NFormItem :label="t('modelManager.selectModel')">
+-            <NSpace align="center" style="width: 100%;">
+-              <NSelect
++            <div class="model-id-editor">
++              <NInput
+                 v-model:value="form.modelId"
++                :placeholder="t('modelManager.defaultModelPlaceholder')"
++                required
++                clearable
++                @update:value="handleModelChange"
++              />
++
++              <NSelect
++                v-if="modelOptions.length"
++                :value="modelOptions.some(option => option.value === form.modelId) ? form.modelId : null"
+                 :options="modelOptions"
+                 :loading="isLoadingModelOptions"
+-                :placeholder="t('modelManager.defaultModelPlaceholder')"
+-                style="flex: 1; min-width: 300px; max-width: 500px;"
++                :placeholder="t('modelManager.recommendedModelPlaceholder')"
+                 clearable
+                 filterable
+-                :filter="(pattern, option) => {
+-                  const label = typeof option.label === 'string' ? option.label : String(option.value)
+-                  const value = String(option.value)
+-                  return label.toLowerCase().includes(pattern.toLowerCase()) || value.toLowerCase().includes(pattern.toLowerCase())
+-                }"
+-                tag
+-                required
+-                @update:value="handleModelChange"
++                @update:value="value => handleModelChange(String(value || ''))"
+               />
+ 
+               <ThemedTooltip
+@@ -246,7 +247,10 @@
+                   </template>
+                 </NButton>
+               </ThemedTooltip>
+-            </NSpace>
++              <NText depth="3" class="model-id-hint">
++                {{ t('modelManager.customModelIdHint') }}
++              </NText>
++            </div>
+           </NFormItem>
+         </NForm>
+ 
+@@ -646,6 +650,34 @@ const onProviderChange = (providerId: string) => {
+   width: 100%;
+ }
+ 
++.model-id-editor {
++  display: grid;
++  grid-template-columns: minmax(260px, 1fr) minmax(190px, .72fr) auto;
++  align-items: center;
++  gap: 8px;
++  width: 100%;
++}
++
++.model-id-hint {
++  grid-column: 1 / -1;
++  line-height: 1.5;
++}
++
++@media (max-width: 720px) {
++  .model-id-editor {
++    grid-template-columns: minmax(0, 1fr) auto;
++  }
++
++  .model-id-editor :deep(.n-select) {
++    grid-column: 1 / -1;
++    grid-row: 2;
++  }
++
++  .model-id-hint {
++    grid-row: 3;
++  }
++}
++
+ .custom-headers-error {
+   line-height: 1.5;
+ }
+diff --git a/packages/ui/src/components/app-layout/PromptOptimizerApp.vue b/packages/ui/src/components/app-layout/PromptOptimizerApp.vue
+index 243d9d6..f4de23a 100644
+--- a/packages/ui/src/components/app-layout/PromptOptimizerApp.vue
++++ b/packages/ui/src/components/app-layout/PromptOptimizerApp.vue
+@@ -2292,6 +2292,166 @@ const refreshDataBackupReminder = () => {
+   dataBackupReminderDue.value = isDataBackupReminderDue()
+ }
+ 
++// Widgetly integration bridge.
++//
++// The Prompt Optimizer application still owns its models, templates, history,
++// favorites and workspaces. Widgetly only sends a plain prompt and receives a
++// plain optimized result. Keeping this bridge deliberately small also lets the
++// full workbench be created on demand and destroyed again after quick use.
++type WidgetlyBridgeMessage = {
++  source?: string
++  type?: string
++  requestId?: string
++  prompt?: string
++  strength?: number
++}
++
++const postToWidgetly = (payload: Record<string, unknown>) => {
++  if (typeof window === 'undefined' || window.parent === window) return
++  window.parent.postMessage({ source: 'prompt-optimizer', ...payload }, '*')
++}
++
++const widgetlyTemplateByStrength: Record<number, string> = {
++  1: 'user-prompt-basic',
++  2: 'user-prompt-planning',
++  3: 'user-prompt-professional',
++}
++
++let widgetlyBridgeBusy = false
++
++const handleWidgetlyBridgeMessage = async (event: MessageEvent<WidgetlyBridgeMessage>) => {
++  if (typeof window === 'undefined' || event.source !== window.parent) return
++  const message = event.data
++  if (!message || message.source !== 'widgetly-shell') return
++  if (
++    message.type !== 'widgetly:hydrate'
++    && message.type !== 'widgetly:optimize'
++    && message.type !== 'widgetly:open-model-manager'
++  ) return
++
++  const requestId = String(message.requestId || '')
++  const prompt = String(message.prompt || '').trim().slice(0, 16000)
++  const strength = Math.max(1, Math.min(3, Math.round(Number(message.strength) || 1)))
++
++  if (!prompt && message.type !== 'widgetly:open-model-manager') {
++    postToWidgetly({ type: 'widgetly:error', requestId, error: '请先输入需要优化的内容' })
++    return
++  }
++  if (!services.value || !hasRestoredInitialState.value) {
++    postToWidgetly({ type: 'widgetly:error', requestId, error: '专业工作台仍在初始化，请稍后重试' })
++    return
++  }
++  if (widgetlyBridgeBusy) {
++    postToWidgetly({ type: 'widgetly:error', requestId, error: '已有提示词正在处理中' })
++    return
++  }
++
++  widgetlyBridgeBusy = true
++  try {
++    await navigateToSubModeKeyCompat('basic-user', { replace: true })
++    await nextTick()
++
++    if (message.type === 'widgetly:open-model-manager') {
++      modelManager.showConfig = true
++      postToWidgetly({ type: 'widgetly:hydrated', requestId })
++      return
++    }
++
++    basicUserSession.updatePrompt(prompt)
++    basicUserSession.updateOptimizedResult({
++      optimizedPrompt: '',
++      reasoning: '',
++      chainId: '',
++      versionId: '',
++    })
++
++    const templateId = widgetlyTemplateByStrength[strength] || widgetlyTemplateByStrength[1]
++    const template = await services.value.templateManager.getTemplate(templateId)
++    optimizer.selectedUserOptimizeTemplate = template
++    basicUserSession.updateTemplate(templateId)
++    await basicUserSession.saveSession()
++
++    if (message.type === 'widgetly:hydrate') {
++      postToWidgetly({ type: 'widgetly:hydrated', requestId })
++      return
++    }
++
++    if (!basicUserSession.selectedOptimizeModelKey) {
++      modelManager.showConfig = true
++      postToWidgetly({
++        type: 'widgetly:needs-model',
++        requestId,
++        error: '请先在专业工作台配置并选择一个优化模型',
++      })
++      return
++    }
++
++    const optimizationStartedAt = Date.now()
++    postToWidgetly({ type: 'widgetly:optimizing', requestId })
++    await optimizer.handleOptimizePrompt()
++
++    const result = String(basicUserSession.optimizedPrompt || '').trim()
++    if (!result) {
++      postToWidgetly({
++        type: 'widgetly:error',
++        requestId,
++        error: '没有生成优化结果，请检查模型配置或在专业工作台重试',
++      })
++      return
++    }
++
++    // The upstream streaming callback normally creates the history chain. Keep
++    // this on-demand iframe alive long enough for that IndexedDB write, then add
++    // the same record ourselves only if no matching chain exists. Without this
++    // guard Widgetly could destroy the page after receiving the text but before
++    // the asynchronous history callback commits.
++    let historyChain: PromptRecordChain | undefined
++    const historyDeadline = Date.now() + 1500
++    while (!historyChain && Date.now() < historyDeadline) {
++      const chains = await services.value.historyManager.getAllChains()
++      historyChain = chains.find(chain => (
++        chain.rootRecord.originalPrompt === prompt
++        && chain.currentRecord.optimizedPrompt === result
++        && chain.rootRecord.timestamp >= optimizationStartedAt - 1000
++      ))
++      if (!historyChain) await new Promise(resolve => setTimeout(resolve, 50))
++    }
++    if (!historyChain) {
++      const recordId = globalThis.crypto?.randomUUID?.()
++        || `widgetly-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
++      historyChain = await services.value.historyManager.createNewChain({
++        id: recordId,
++        originalPrompt: prompt,
++        optimizedPrompt: result,
++        type: 'userOptimize',
++        modelKey: basicUserSession.selectedOptimizeModelKey,
++        templateId,
++        timestamp: Date.now(),
++        metadata: { optimizationMode: 'user', functionMode: 'basic', source: 'widgetly' },
++      })
++    }
++    optimizer.currentChainId = historyChain.chainId
++    optimizer.currentVersions = historyChain.versions
++    optimizer.currentVersionId = historyChain.currentRecord.id
++    basicUserSession.updateOptimizedResult({
++      optimizedPrompt: result,
++      reasoning: String(basicUserSession.reasoning || ''),
++      chainId: historyChain.chainId,
++      versionId: historyChain.currentRecord.id,
++    })
++    await basicUserSession.saveSession()
++    postToWidgetly({ type: 'widgetly:result', requestId, result })
++  } catch (error) {
++    postToWidgetly({
++      type: 'widgetly:error',
++      requestId,
++      error: error instanceof Error ? error.message : String(error),
++    })
++  } finally {
++    widgetlyBridgeBusy = false
++  }
++}
++
+ onMounted(() => {
+   // Route-level lazy loading can break after a new deployment when this tab is still running an old main bundle.
+   // Prompt user to refresh instead of auto-reloading.
+@@ -2299,6 +2459,7 @@ onMounted(() => {
+     window.addEventListener('unhandledrejection', handleUnhandledRejection);
+     window.addEventListener(DATA_BACKUP_STATUS_EVENT, refreshDataBackupReminder);
+     window.addEventListener('storage', refreshDataBackupReminder);
++    window.addEventListener('message', handleWidgetlyBridgeMessage);
+     refreshDataBackupReminder();
+   }
+   removeRouterErrorHandler = routerInstance.onError((error) => {
+@@ -2381,6 +2542,7 @@ onMounted(() => {
+     } finally {
+       // Ensure the app can render even if session restore fails.
+       hasRestoredInitialState.value = true
++      postToWidgetly({ type: 'widgetly:ready' })
+     }
+   })
+ })
+@@ -2409,6 +2571,7 @@ onBeforeUnmount(async () => {
+     window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+     window.removeEventListener(DATA_BACKUP_STATUS_EVENT, refreshDataBackupReminder)
+     window.removeEventListener('storage', refreshDataBackupReminder)
++    window.removeEventListener('message', handleWidgetlyBridgeMessage)
+     if (hasRegisteredGlobalHistoryRefresh) {
+       window.removeEventListener(
+         'prompt-optimizer:history-refresh',
+diff --git a/packages/ui/src/i18n/locales/en-US/models.ts b/packages/ui/src/i18n/locales/en-US/models.ts
+index 984569a..4a5ace5 100644
+--- a/packages/ui/src/i18n/locales/en-US/models.ts
++++ b/packages/ui/src/i18n/locales/en-US/models.ts
+@@ -119,6 +119,8 @@ const messages = {
+     "displayNamePlaceholder": "Enter display name",
+     "apiUrlPlaceholder": "https://api.example.com/v1",
+     "defaultModelPlaceholder": "Type or select a model name",
++    "recommendedModelPlaceholder": "Or select a suggested model",
++    "customModelIdHint": "You can type any model name. Use the exact model ID supplied by your provider, such as deepseek-chat, qwen-plus, or your deployment name.",
+     "apiKeyPlaceholder": "Enter API key (optional)",
+     "modelKeyRequired": "Model key is required",
+     "modelKeyReserved": "Model key \"{id}\" conflicts with a built-in model. Please choose another key, or edit the built-in model configuration instead.",
+diff --git a/packages/ui/src/i18n/locales/zh-CN/models.ts b/packages/ui/src/i18n/locales/zh-CN/models.ts
+index 07eee19..4dc36bc 100644
+--- a/packages/ui/src/i18n/locales/zh-CN/models.ts
++++ b/packages/ui/src/i18n/locales/zh-CN/models.ts
+@@ -120,6 +120,8 @@ const messages = {
+     "displayNamePlaceholder": "请输入显示名称",
+     "apiUrlPlaceholder": "https://api.example.com/v1",
+     "defaultModelPlaceholder": "输入或选择模型名称",
++    "recommendedModelPlaceholder": "也可以选择推荐模型",
++    "customModelIdHint": "模型名称可以直接填写，请使用服务商提供的准确模型 ID，例如 deepseek-chat、qwen-plus 或自定义部署名称。",
+     "apiKeyPlaceholder": "请输入API密钥（可选）",
+     "modelKeyRequired": "模型标识不能为空",
+     "modelKeyReserved": "模型标识“{id}”与内置配置冲突，请换一个标识，或直接编辑对应的内置模型配置",
+diff --git a/packages/ui/src/i18n/locales/zh-TW/models.ts b/packages/ui/src/i18n/locales/zh-TW/models.ts
+index d99fa5a..0ac0e3c 100644
+--- a/packages/ui/src/i18n/locales/zh-TW/models.ts
++++ b/packages/ui/src/i18n/locales/zh-TW/models.ts
+@@ -119,6 +119,8 @@ const messages = {
+     "displayNamePlaceholder": "請輸入顯示名稱",
+     "apiUrlPlaceholder": "https://api.example.com/v1",
+     "defaultModelPlaceholder": "輸入或選擇模型名稱",
++    "recommendedModelPlaceholder": "也可以選擇建議模型",
++    "customModelIdHint": "模型名稱可以直接填寫，請使用服務商提供的準確模型 ID，例如 deepseek-chat、qwen-plus 或自訂部署名稱。",
+     "apiKeyPlaceholder": "請輸入API金鑰（選填）",
+     "modelKeyRequired": "模型標識不能為空",
+     "modelKeyReserved": "模型標識「{id}」與內建配置衝突，請更換標識，或直接編輯對應的內建模型配置",

@@ -1,8 +1,9 @@
 {
   "name": "widgetly",
   "productName": "Widgetly",
-  "version": "0.2.12",
+  "version": "0.2.17",
   "description": "Widgetly 组件坞 —— Windows 桌面小组件中心",
+  "license": "AGPL-3.0-only",
   "main": "main.js",
   "private": true,
   "author": "Widgetly",
@@ -46,6 +47,9 @@
       "main.js",
       "manager/**/*",
       "widgets/**/*",
+      "third_party/**/*",
+      "LICENSE",
+      "LICENSES/**/*",
       "assets/**/*",
       "package.json"
     ],

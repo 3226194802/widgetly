@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>倒数日·三目标</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-variant="triple">
+  <main class="card triple" id="card">
+    <div class="glass" id="glass"></div>
+    <div class="veil"></div>
+    <div class="noise"></div>
+    <section class="triple-content">
+      <header class="triple-head">
+        <div><strong>倒数日</strong><span>轻点任意一行即可切换</span></div>
+        <button id="manageBtn" type="button" title="管理目标日期">＋</button>
+      </header>
+      <div class="count-list" id="countList">
+        <button class="count-row" type="button" data-slot="0"><span class="row-name">点击选择目标</span><span class="row-number">＋</span></button>
+        <button class="count-row" type="button" data-slot="1"><span class="row-name">点击选择目标</span><span class="row-number">＋</span></button>
+        <button class="count-row" type="button" data-slot="2"><span class="row-name">点击选择目标</span><span class="row-number">＋</span></button>
+      </div>
+      <div class="triple-today" id="todayText"></div>
+    </section>
+  </main>
+  <script src="renderer.js"></script>
+</body>
+</html>

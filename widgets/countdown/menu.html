@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>倒数日菜单</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+    #menu { width: max-content; min-width: 218px; max-width: 380px; padding: 7px; border-radius: 14px; color: #182133; background: rgba(252,253,255,.98); border: 1px solid rgba(27,42,64,.11); box-shadow: 0 14px 36px rgba(22,40,64,.27); }
+    .item { min-height: 34px; padding: 7px 11px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-radius: 9px; font-size: 12.5px; white-space: nowrap; cursor: default; }
+    .item:hover { background: rgba(49,159,232,.12); }
+    .item.danger { color: #dc3f45; }
+    .item.danger:hover { background: rgba(220,63,69,.1); }
+    .sep { height: 1px; margin: 5px 9px; background: rgba(25,39,60,.09); }
+    .label { padding: 6px 10px 4px; color: rgba(24,33,51,.52); font-size: 10.5px; font-weight: 700; letter-spacing: .4px; }
+    .left { min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; }
+    .swatch { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; box-shadow: 0 0 0 2px rgba(0,0,0,.05); }
+    .slider-row { gap: 10px; }
+    .slider-track { position: relative; width: 105px; height: 15px; border-radius: 8px; background: rgba(25,39,60,.1); cursor: pointer; }
+    .slider-fill { position: absolute; left: 0; top: 50%; height: 4px; margin-top: -2px; border-radius: 3px; background: linear-gradient(90deg,#5db7ef,#278fd7); }
+    .slider-thumb { position: absolute; top: 50%; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; border-radius: 50%; background: #fff; border: 1px solid rgba(0,0,0,.12); box-shadow: 0 2px 5px rgba(0,0,0,.24); }
+    .slider-val { width: 32px; text-align: right; color: #248bd1; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body><div id="menu"></div><script src="menu.js"></script></body>
+</html>

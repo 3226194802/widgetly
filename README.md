@@ -1,10 +1,10 @@
 # ✨ Widgetly 组件坞 —— 让 Windows 桌面变成你的专属控制台
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blueviolet.svg)](#)
 [![Download](https://img.shields.io/badge/Download-%E6%9C%80%E6%96%B0%E7%89%88-brightgreen.svg)](https://github.com/3226194802/widgetly-releases/releases)
 
-**一个管理器，管住你桌面上所有小组件。** 极简 iOS 风格、透明毛玻璃质感、本地运行零联网——把 Windows 桌面变成一块干净、好看、高效的信息面板。
+**一个管理器，管住你桌面上所有小组件。** 极简 iOS 风格、透明毛玻璃质感、本地优先——把 Windows 桌面变成一块干净、好看、高效的信息面板。
 
 > 🇬🇧 [English README](#english)
 
@@ -16,7 +16,7 @@
 
 ## 🎯 它是什么
 
-Widgetly（组件坞）是一个 Windows 桌面小组件中心：一个轻量的管理器窗口，加一批可以自由拖放、置顶、调透明度的桌面小组件。所有数据都在本地处理，不联网、无账号、无服务器，你的隐私完全掌握在自己手里。
+Widgetly（组件坞）是一个 Windows 桌面小组件中心：一个轻量的管理器窗口，加一批可以自由拖放、置顶、调透明度的桌面小组件。组件数据默认保存在本机；AI 提示词优化组件仅在用户主动使用时连接用户自行配置的模型服务。
 
 <p align="center">
   <img src="./docs/screenshot-manager.jpg" alt="Widgetly 组件坞管理器" width="80%">
@@ -28,6 +28,7 @@ Widgetly（组件坞）是一个 Windows 桌面小组件中心：一个轻量的
 
 | 特色 | 说明 |
 |---|---|
+| ✦ **AI 提示词优化** | 小窗快速输入，三档优化强度；可填写任意服务商模型名称，完整工作台按需加载 |
 | 🖥️ **DeepSeek Harness 一键启动** | 内置 DSH 启动器组件，配置路径后一键拉起，不用再翻文件夹 |
 | 📊 **Agent 平台用量监控** | 本地读取 Hermes / DeepSeek Harness / Claude Code / Codex 等 Agent 的 token 用量、成本、会话排行，随时掌握 AI 消耗 |
 | 🕐 **灵动时钟**（标准/中/小） | 渐变数字、12/24 小时制、4 个数字独立配色 |
@@ -37,7 +38,7 @@ Widgetly（组件坞）是一个 Windows 桌面小组件中心：一个轻量的
 | 🍅 **番茄时钟 + 今日待办** | 专注计时（重启续跑）、每日待办清单 |
 | 🖼️ **图库** | 本地图片无缝交叉淡化轮播 |
 | 📈 **系统/内存监控** | CPU/GPU/内存/磁盘实时环形进度 + 内存心电图 |
-| 🧩 **自由定制** | 每个组件都支持右键菜单、锁定、置顶、透明度，持久化到本地配置 |
+| 🧩 **自由定制** | 组件支持右键菜单、锁定、置顶和透明度；倒数日与 AI 提示词组件还可自由缩放并记住尺寸 |
 
 ---
 
@@ -99,7 +100,7 @@ npm run build:msix # 打包微软商店 MSIX
 
 ## 📄 许可
 
-本项目采用 [MIT License](./LICENSE) 开源。可自由使用、修改、商用、再分发，但需保留版权声明。
+当前版本采用 [GNU AGPL v3](./LICENSE) 开源。AI 提示词优化工作台基于 [Prompt Optimizer v2.11.8](./third_party/prompt-optimizer/NOTICE.md) 修改并构建；安装包同时保留上游许可证、版本信息与 Widgetly 集成补丁。此前 Widgetly 原始代码的 MIT 许可声明保存在 [`LICENSES/Widgetly-MIT.txt`](./LICENSES/Widgetly-MIT.txt)。
 
 ---
 
@@ -107,11 +108,11 @@ npm run build:msix # 打包微软商店 MSIX
 
 # ✨ Widgetly — Turn Your Windows Desktop into a Personal Command Center
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-blueviolet.svg)](#)
 [![Download](https://img.shields.io/badge/Download-Latest-brightgreen.svg)](https://github.com/3226194802/widgetly-releases/releases)
 
-**One manager for all your desktop widgets.** Minimal iOS-style design, frosted-glass transparency, fully offline — a clean, beautiful and efficient information panel right on your Windows desktop.
+**One manager for all your desktop widgets.** Minimal iOS-style design, frosted-glass transparency, and a local-first architecture — a clean, beautiful and efficient information panel right on your Windows desktop.
 
 <p align="center">
   <img src="./docs/screenshot-desktop.jpg" alt="Widgetly on desktop" width="80%">
@@ -119,7 +120,7 @@ npm run build:msix # 打包微软商店 MSIX
 
 ## 🎯 What is it?
 
-Widgetly is a **desktop widget center for Windows**: a lightweight manager window plus a collection of draggable, pinnable, opacity-adjustable desktop widgets. Everything runs 100% locally — no network, no account, no server. Your privacy stays in your hands.
+Widgetly is a **desktop widget center for Windows**: a lightweight manager window plus a collection of draggable, pinnable, opacity-adjustable desktop widgets. Widget data is stored locally by default. The AI Prompt Optimizer connects only to a model provider configured and invoked by the user.
 
 <p align="center">
   <img src="./docs/screenshot-manager.jpg" alt="Widgetly manager" width="80%">
@@ -129,6 +130,7 @@ Widgetly is a **desktop widget center for Windows**: a lightweight manager windo
 
 | Feature | Description |
 |---|---|
+| ✦ **AI Prompt Optimizer** | Quick input, three strengths, editable provider model IDs, and the complete on-demand workbench |
 | 🖥️ **DeepSeek Harness Launcher** | One-click launcher widget for DeepSeek Harness — no more digging through folders |
 | 📊 **Agent Usage Monitor** | Track token usage, cost and session rankings of Hermes / DeepSeek Harness / Claude Code / Codex locally |
 | 🕐 **Gradient Clocks** (S/M/L) | Gradient digits, 12/24-hour, per-digit colors |
@@ -138,7 +140,7 @@ Widgetly is a **desktop widget center for Windows**: a lightweight manager windo
 | 🍅 **Pomodoro + Todo** | Focus timer (survives restart) + daily todo list |
 | 🖼️ **Gallery** | Local photo slideshow with cross-fade |
 | 📈 **System / Memory Monitor** | CPU/GPU/RAM/disk ring gauges + live RAM ECG |
-| 🧩 **Fully customizable** | Right-click menu on every widget: lock, pin, opacity, quit — all persisted locally |
+| 🧩 **Fully customizable** | Right-click controls are persisted; countdown and AI prompt widgets can also be freely resized |
 
 ## 📦 Download
 
@@ -174,4 +176,4 @@ Tech stack: **Electron 40** · vanilla Node.js (no frontend framework) · koffi 
 
 ## 📄 License
 
-Open-sourced under the [MIT License](./LICENSE). Free to use, modify, redistribute and use commercially, as long as the copyright notice is retained.
+The current version is licensed under the [GNU AGPL v3](./LICENSE). Its AI workbench is a modified build of [Prompt Optimizer v2.11.8](./third_party/prompt-optimizer/NOTICE.md); the upstream license, exact version and Widgetly integration patch are included. The historical MIT notice for Widgetly's original code is preserved at [`LICENSES/Widgetly-MIT.txt`](./LICENSES/Widgetly-MIT.txt).

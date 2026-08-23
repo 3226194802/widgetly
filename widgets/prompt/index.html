@@ -1,48 +1,87 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>AI 提示词优化</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI 提示词优化</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <main class="card" id="card">
-    <div class="veil" id="veil"></div>
-    <header class="header" id="dragArea">
-      <div class="brand"><span class="spark">✦</span><span>AI 提示词优化</span></div>
-      <div class="head-actions"><button class="config" id="btnHistory" title="历史对话">◷</button><button class="config" id="btnConfig" title="AI 与组件设置">⚙</button></div>
-    </header>
-
-    <section class="strength" aria-label="优化强度">
-      <button class="level active" data-level="1"><b>轻度</b><span>只润色</span></button>
-      <button class="level" data-level="2"><b>增强</b><span>更清楚</span></button>
-      <button class="level" data-level="3"><b>深度</b><span>完整指令</span></button>
-    </section>
-    <p class="level-tip" id="levelTip">保留原意，只让表达更自然、清楚。</p>
-
-    <section class="editor">
-      <div class="input-head"><span>原始内容</span><button id="btnReadClipboard">读取剪贴板</button></div>
-      <textarea id="source" placeholder="粘贴想交给 AI 的话…"></textarea>
-      <textarea id="context" class="context" placeholder="可选：回答 AI 提出的确认问题，或补充背景…"></textarea>
-    </section>
-
-    <div class="actions">
-      <button class="optimize" id="btnOptimize">✦ 开始优化</button>
-      <button class="clear" id="btnClear" title="清空内容">清空</button>
+<body data-mode="mini">
+  <main class="mini-shell" id="miniShell">
+    <div class="tint" id="tint"></div>
+    <div class="aurora aurora-blue" aria-hidden="true"></div>
+    <div class="aurora aurora-violet" aria-hidden="true"></div>
+    <div class="glass-shine" aria-hidden="true"></div>
+    <div class="drag-strip" id="dragStrip" aria-hidden="true"></div>
+    <textarea id="promptInput" maxlength="16000" spellcheck="false" placeholder="粘贴或输入想交给 AI 的话…&#10;Ctrl + Enter 开始优化"></textarea>
+    <div class="action-rail">
+      <button class="ghost-button settings-button" id="settingsButton" title="组件设置" aria-label="组件设置">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8Z"/><path d="M19.2 13.1c.05-.36.05-.74 0-1.1l1.64-1.28-1.75-3.03-1.94.78a8.04 8.04 0 0 0-.96-.56L15.9 5.85h-3.5l-.3 2.06c-.34.16-.66.35-.96.56l-1.94-.78-1.75 3.03L9.1 12c-.05.36-.05.74 0 1.1l-1.65 1.28 1.75 3.03 1.94-.78c.3.22.62.4.96.56l.3 2.06h3.5l.3-2.06c.34-.16.66-.34.96-.56l1.94.78 1.75-3.03-1.65-1.28Z"/></svg>
+      </button>
+      <button class="ghost-button workspace-button" id="workspaceButton" title="打开专业工作台" aria-label="打开专业工作台">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5H5.8A1.8 1.8 0 0 0 4 6.8v11.4A1.8 1.8 0 0 0 5.8 20h11.4a1.8 1.8 0 0 0 1.8-1.8V16"/><path d="M13 5h6v6M19 5l-8 8"/></svg>
+      </button>
     </div>
-    <section class="result empty" id="resultBox">
-      <div class="result-head"><span>优化结果</span><div class="result-actions"><button id="btnCopy" disabled>复制</button><button id="btnDone" hidden>完成</button></div></div>
-      <div class="result-text" id="resultText">配置 AI 服务后，即可把剪贴板里的想法变成可直接使用的提示词。</div>
-    </section>
-    <div class="status" id="status" role="status"></div>
-
-    <div class="op-panel" id="opPanel" hidden>
-      <span>背景透明度</span>
-      <div class="op-slider" id="opSlider"><i id="opFill"></i><b id="opThumb"></b></div>
-      <em id="opVal">60%</em>
-    </div>
-    <div class="resize-grip" id="resizeGrip" title="拖动调整组件大小"></div>
+    <button class="optimize-button" id="optimizeButton" title="开始优化（Ctrl + Enter）" aria-label="开始优化">
+      <span class="optimize-halo" aria-hidden="true"></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8c.6 4.8 2.4 6.6 7.2 7.2-4.8.6-6.6 2.4-7.2 7.2-.6-4.8-2.4-6.6-7.2-7.2 4.8-.6 6.6-2.4 7.2-7.2Z"/><path d="M18.5 15.5c.25 2 1 2.75 3 3-2 .25-2.75 1-3 3-.25-2-1-2.75-3-3 2-.25 2.75-1 3-3Z"/></svg>
+    </button>
+    <div class="mini-status" id="miniStatus"></div>
   </main>
+
+  <section class="result-panel" id="resultPanel" hidden>
+    <div class="result-head">
+      <div class="result-title"><span class="result-dot"></span><strong>优化结果</strong></div>
+      <div class="result-actions">
+        <button id="copyButton">复制</button>
+        <button id="continueButton" class="result-primary">继续精修</button>
+        <button id="doneButton">完成</button>
+      </div>
+    </div>
+    <div class="result-text" id="resultText"></div>
+  </section>
+
+  <section class="workspace-shell" id="workspaceShell" hidden>
+    <header class="workspace-titlebar">
+      <div class="workspace-drag" id="workspaceDrag">
+        <span class="workspace-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8c.6 4.8 2.4 6.6 7.2 7.2-4.8.6-6.6 2.4-7.2 7.2-.6-4.8-2.4-6.6-7.2-7.2 4.8-.6 6.6-2.4 7.2-7.2Z"/></svg></span>
+        <span class="workspace-copy"><strong>AI 提示词工作台</strong><small>基于 Prompt Optimizer v2.11.8</small></span>
+      </div>
+      <div class="window-actions">
+        <button id="backButton" class="back-action" title="返回小组件"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg><span>返回小组件</span></button>
+        <span class="window-divider" aria-hidden="true"></span>
+        <button id="minimizeButton" class="window-button" title="最小化" aria-label="最小化"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12h10"/></svg></button>
+        <button id="maximizeButton" class="window-button" title="最大化或还原" aria-label="最大化或还原"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"/></svg></button>
+        <button id="closeWorkspaceButton" class="window-button danger" title="关闭专业工作台" aria-label="关闭专业工作台"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8 8 8m0-8-8 8"/></svg></button>
+      </div>
+    </header>
+    <div class="workbench-host" id="workbenchHost"></div>
+  </section>
+
+  <section class="loading-layer" id="loadingLayer" hidden>
+    <div class="loading-mark" aria-hidden="true"><span></span><svg viewBox="0 0 24 24"><path d="M12 2.8c.6 4.8 2.4 6.6 7.2 7.2-4.8.6-6.6 2.4-7.2 7.2-.6-4.8-2.4-6.6-7.2-7.2 4.8-.6 6.6-2.4 7.2-7.2Z"/></svg></div>
+    <strong id="loadingTitle">正在启动专业优化引擎</strong>
+    <span id="loadingText">首次加载需要一点时间，完成后会自动释放工作台。</span>
+    <button id="cancelLoadingButton">取消</button>
+  </section>
+
+  <section class="opacity-panel" id="opacityPanel" hidden>
+    <span>背景透明度</span>
+    <input id="opacityInput" type="range" min="0" max="100" step="1">
+    <b id="opacityValue">60%</b>
+  </section>
+
+  <section class="about-panel" id="aboutPanel" hidden>
+    <div class="about-card">
+      <button id="closeAboutButton" class="about-close">×</button>
+      <div class="about-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8c.6 4.8 2.4 6.6 7.2 7.2-4.8.6-6.6 2.4-7.2 7.2-.6-4.8-2.4-6.6-7.2-7.2 4.8-.6 6.6-2.4 7.2-7.2Z"/></svg></div>
+      <h2>开源组件说明</h2>
+      <p>完整工作台基于 linshenkx 的 Prompt Optimizer v2.11.8 修改并构建，遵循 AGPL-3.0-only。</p>
+      <p>Widgetly 仅在需要时加载工作台；返回小组件后会销毁完整页面，以降低常驻内存。</p>
+      <a href="https://github.com/linshenkx/prompt-optimizer" target="_blank" rel="noreferrer">查看原项目与许可证</a>
+    </div>
+  </section>
+
   <script src="renderer.js"></script>
 </body>
 </html>
