@@ -235,6 +235,11 @@ function setup({ instance, win, save }) {
   ipcMain.handle('launcher:settings-init:' + instId, () => ({
     dshPath: cfg.dshPath, port: cfg.port, browser: cfg.browser, apiKey: cfg.apiKey,
   }));
+  // 统一右键菜单的直接入口。
+  ipcMain.on('launcher:settings-open:' + instId, openSettings);
+  ipcMain.on('launcher:common-toggle:' + instId, () => { if (state === 'running' || state === 'starting') stop(); else start(); });
+  ipcMain.on('launcher:common-size:' + instId, (_e, value) => setSize(String(value || '')));
+  ipcMain.on('launcher:common-theme:' + instId, (_e, value) => setTheme(String(value || '')));
   ipcMain.on('launcher:settings-save:' + instId, (_e, v) => {
     if (v && typeof v === 'object') {
       if (v.dshPath !== undefined) cfg.dshPath = String(v.dshPath || '').trim();

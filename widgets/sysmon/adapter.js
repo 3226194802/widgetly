@@ -237,8 +237,6 @@ $o | ConvertTo-Json -Compress`;
       ]).popup({ window: win });
     } catch (_) {}
   }
-  win.webContents.on('context-menu', openMenu);
-
   // ---------- 轮询 ----------
   win.webContents.on('did-finish-load', () => {
     win.webContents.send('lock:' + instId, locked);

@@ -162,6 +162,7 @@ function setup({ instance, win, save }) {
   if (pinned) win.setAlwaysOnTop(true, 'floating');
 
   ipcMain.on('monitor:refresh:' + instId, fetchUsage);
+  ipcMain.on('monitor:glass-toggle:' + instId, toggleGlass);
   ipcMain.on('monitor:menu:' + instId, openMenu);
   ipcMain.on('monitor:quit:' + instId, quitWidget);
   ipcMain.on('monitor:appearance:' + instId, (_e, a) => setAppearance(a));
@@ -180,8 +181,6 @@ function setup({ instance, win, save }) {
     bgOpacity = Math.max(0, Math.min(1, v));
     persist();
   });
-
-  win.webContents.on('context-menu', openMenu);
 
   win.webContents.on('did-finish-load', () => {
     win.webContents.send('pin:' + instId, pinned);

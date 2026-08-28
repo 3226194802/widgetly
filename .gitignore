@@ -9,3 +9,11 @@ dist/
 widgetly-debug.log
 config.json
 LocalLow/
+icon-cache/
+
+# local automated test artifacts (profiles, screenshots, caches)
+.widgetly-crash-test/
+.widgetly-local-test/
+Widgetly.widgetly-crash-test/
+Widgetly.widgetly-local-test/
+*.out.log

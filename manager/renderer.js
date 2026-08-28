@@ -3,11 +3,29 @@ const { ipcRenderer } = require('electron');
 const grid = document.getElementById('grid');
 const nav = document.getElementById('nav');
 const searchInput = document.getElementById('searchInput');
+const libraryTitle = document.getElementById('libraryTitle');
+const resultCount = document.getElementById('resultCount');
+const libraryView = document.getElementById('libraryView');
+const myWidgetsView = document.getElementById('myWidgetsView');
+const mineNav = document.getElementById('mineNav');
+const mineNavCount = document.getElementById('mineNavCount');
+const myWidgetsGrid = document.getElementById('myWidgetsGrid');
+const myWidgetsEmpty = document.getElementById('myWidgetsEmpty');
+const myWidgetsSummary = document.getElementById('myWidgetsSummary');
+const myWidgetsFootHint = document.getElementById('myWidgetsFootHint');
+const manageWidgetsButton = document.getElementById('manageWidgets');
+ipcRenderer.invoke('app-version').then((version) => {
+  const node = document.querySelector('.foot-ver');
+  if (node && version) node.textContent = 'v' + version;
+}).catch(() => {});
 
 let categories = [];
 let widgets = [];
 let activeCategory = 'all';
 let searchQuery = '';
+let activeView = 'library';
+let myWidgetGroups = [];
+let managingMyWidgets = false;
 let dragId = null;   // 当前正在拖拽排序的组件 id
 
 function filtered() {
@@ -21,9 +39,10 @@ function filtered() {
 // ---------- 分类导航 ----------
 function renderNav() {
   nav.innerHTML = '';
+  if (mineNav) mineNav.classList.toggle('active', activeView === 'mine');
   categories.forEach((c) => {
     const item = document.createElement('div');
-    item.className = 'nav-item' + (c.id === activeCategory ? ' active' : '');
+    item.className = 'nav-item' + (activeView === 'library' && c.id === activeCategory ? ' active' : '');
     item.dataset.cat = c.id;
 
     const icon = document.createElement('span');
@@ -37,6 +56,7 @@ function renderNav() {
     item.appendChild(label);
     item.addEventListener('click', () => {
       activeCategory = c.id;
+      showLibrary();
       renderNav();
       applyFilter();
     });
@@ -44,18 +64,59 @@ function renderNav() {
   });
 }
 
-// ---------- 卡片（组件按原始尺寸显示，不缩比；iframe 缓存：只创建一次，过滤时仅切换显示） ----------
+// ---------- 卡片（两级正方形容器；iframe 缓存：只创建一次，过滤时仅切换显示） ----------
 const itemCache = {};
+
+// 绝大多数组件使用一行四张的普通正方形；只有信息密度确实高、在小预览里
+// 无法辨认的组件使用一行两张的大正方形。组件本身仍按原始比例等比缩放，
+// 因此横条、竖条和方形组件都不会被拉伸变形。
+const LARGE_SQUARE_IDS = new Set([
+  'plannerCalendar',
+  'quadrantTasks',
+  'clockCalendar',
+  'desktopFolder',
+  'markdownNote',
+  'classSchedule',
+  'calendarXL',
+  'monitor',
+  'miniCalendarGlass',
+  'lineWeather',
+  'componentDock',
+]);
+
+const TILE_ORDER = ['square', 'large-square'];
+function tileRank(widget) {
+  const index = TILE_ORDER.indexOf(tileFor(widget).name);
+  return index < 0 ? TILE_ORDER.length : index;
+}
+
+function tileFor(w) {
+  return LARGE_SQUARE_IDS.has(w.id)
+    ? { cols: 6, name: 'large-square' }
+    : { cols: 3, name: 'square' };
+}
+
+// CSS Grid 的百分比行高会相对容器高度计算，不能直接拿来做响应式正方形。
+// 这里根据网格的真实可用宽度计算单列宽度，再把同一个数值交给纵向轨道；
+// 普通卡片横纵各跨 4 格，大卡片横纵各跨 6 格，因此窗口缩放后仍严格等宽等高。
+function syncGridUnit() {
+  const style = getComputedStyle(grid);
+  const gap = Number.parseFloat(style.columnGap) || 0;
+  const padding = (Number.parseFloat(style.paddingLeft) || 0) + (Number.parseFloat(style.paddingRight) || 0);
+  const available = grid.clientWidth - padding - gap * 11;
+  if (available > 0) grid.style.setProperty('--grid-unit', `${available / 12}px`);
+}
+syncGridUnit();
+window.addEventListener('resize', () => requestAnimationFrame(syncGridUnit));
 
 function makeItem(w) {
   const item = document.createElement('div');
-  item.className = 'item';
-
-  // 网格占位：宽 140/280/342 → 1/2/3 列；高 74~180 → 1 行，280~285 → 2 行，500~551 → 4 行
-  const cols = w.w <= 150 ? 1 : w.w <= 300 ? 2 : 3;
-  const rows = w.h <= 185 ? 1 : w.h <= 300 ? 2 : 4;
-  item.style.gridColumn = `span ${cols}`;
-  item.style.gridRow = `span ${rows}`;
+  const tile = tileFor(w);
+  item.className = `item tile-${tile.name}`;
+  item.style.setProperty('--tile-cols', String(tile.cols));
+  item.style.gridColumn = `span ${tile.cols}`;
+  item.style.gridRow = `span ${tile.cols}`;
+  item.dataset.tile = tile.name;
 
   // 预览缩放容器：iframe 保持原始尺寸，由 .scaler 等比缩放到格子内
   const box = document.createElement('div');
@@ -77,17 +138,24 @@ function makeItem(w) {
 
   const name = document.createElement('div');
   name.className = 'name';
-  name.textContent = w.name;
+  const nameText = document.createElement('strong');
+  nameText.textContent = w.name;
+  const meta = document.createElement('span');
+  meta.className = 'item-meta';
+  meta.textContent = w.count ? `桌面已有 ${w.count} 个` : '点击添加';
+  name.append(nameText, meta);
 
   item.append(box, name);
   item.dataset.wid = w.id;
   item.addEventListener('click', () => {
     item.classList.add('pulse');
     setTimeout(() => item.classList.remove('pulse'), 300);
+    w.count = Number(w.count || 0) + 1;
+    meta.textContent = `桌面已有 ${w.count} 个`;
     ipcRenderer.send('add-widget', w.id);
   });
 
-  // ---------- 拖拽排序：可放入任意空位（鼠标位置决定插入点），非仅与某卡片交换 ----------
+  // ---------- 拖拽排序：只在同尺寸正方形组内调整，防止两种规格再次混排 ----------
   item.draggable = true;
   item.addEventListener('dragstart', (e) => {
     dragId = w.id;
@@ -103,11 +171,180 @@ function makeItem(w) {
   return item;
 }
 
-// 等比缩放预览到格子内（格子尺寸 = span×148 + gap，留 8px 内边距）
+// ---------- 我的小组件：按组件类型合并，管理模式下可精确删除某一个桌面实例 ----------
+function makeMyWidgetItem(group) {
+  const item = document.createElement('article');
+  item.className = 'item my-widget-card';
+  item.dataset.wid = group.id;
+  item._previewWidget = group;
+
+  const box = document.createElement('div');
+  box.className = 'box';
+  const scaler = document.createElement('div');
+  scaler.className = 'scaler';
+  scaler.style.width = (group.w || 300) + 'px';
+  scaler.style.height = (group.h || 150) + 'px';
+  const frame = document.createElement('iframe');
+  frame.className = 'frame';
+  frame.setAttribute('scrolling', 'no');
+  frame.style.width = (group.w || 300) + 'px';
+  frame.style.height = (group.h || 150) + 'px';
+  scaler.appendChild(frame);
+  box.appendChild(scaler);
+  item._frame = frame;
+  item._scaler = scaler;
+
+  const name = document.createElement('div');
+  name.className = 'name';
+  const nameText = document.createElement('strong');
+  nameText.textContent = group.name;
+  const meta = document.createElement('span');
+  meta.className = 'item-meta';
+  meta.textContent = `桌面已有 ${group.count} 个`;
+  name.append(nameText, meta);
+  item.append(box, name);
+
+  if (group.count > 1) {
+    const badge = document.createElement('span');
+    badge.className = 'repeat-badge';
+    badge.textContent = `×${group.count}`;
+    badge.title = `桌面上有 ${group.count} 个“${group.name}”`;
+    item.appendChild(badge);
+  }
+
+  const manageLayer = document.createElement('div');
+  manageLayer.className = 'my-widget-manage-layer';
+  const manageTitle = document.createElement('div');
+  manageTitle.className = 'my-widget-manage-title';
+  manageTitle.textContent = `管理 ${group.name}`;
+  const instanceList = document.createElement('div');
+  instanceList.className = 'my-widget-instance-list';
+  group.instances.forEach((instance, index) => {
+    const row = document.createElement('div');
+    row.className = 'my-widget-instance';
+    const label = document.createElement('span');
+    label.textContent = group.count > 1 ? `第 ${index + 1} 个` : '桌面上的此组件';
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'my-widget-remove';
+    remove.textContent = '删除';
+    remove.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const displayName = group.count > 1 ? `${group.name}（第 ${index + 1} 个）` : group.name;
+      if (!window.confirm(`确定从桌面删除“${displayName}”吗？`)) return;
+      remove.disabled = true;
+      try {
+        const result = await ipcRenderer.invoke('remove-widget:request', instance.id);
+        if (result && result.ok) {
+          await Promise.all([refreshMyWidgets(), refreshLibraryCounts()]);
+        }
+      } finally {
+        remove.disabled = false;
+      }
+    });
+    row.append(label, remove);
+    instanceList.appendChild(row);
+  });
+  manageLayer.append(manageTitle, instanceList);
+  item.appendChild(manageLayer);
+  item.classList.toggle('is-managing', managingMyWidgets);
+
+  loadFrame(item, group);
+  requestAnimationFrame(() => fitScaler(item, group));
+  if (ro) ro.observe(item);
+  return item;
+}
+
+function renderMyWidgets() {
+  if (!myWidgetsGrid) return;
+  if (ro) myWidgetsGrid.querySelectorAll('.my-widget-card').forEach((item) => ro.unobserve(item));
+  myWidgetsGrid.innerHTML = '';
+  const visibleGroups = myWidgetGroups.filter((group) => !searchQuery || group.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const instanceTotal = myWidgetGroups.reduce((total, group) => total + group.count, 0);
+  const visibleTotal = visibleGroups.reduce((total, group) => total + group.count, 0);
+
+  visibleGroups.forEach((group, index) => {
+    const item = makeMyWidgetItem(group);
+    item.style.animationDelay = `${30 + index * 45}ms`;
+    myWidgetsGrid.appendChild(item);
+  });
+  const hasGroups = visibleGroups.length > 0;
+  if (myWidgetsEmpty) {
+    myWidgetsEmpty.hidden = hasGroups || searchQuery.length > 0;
+    myWidgetsEmpty.classList.toggle('search-empty', !hasGroups && !!searchQuery);
+    if (!hasGroups && searchQuery) {
+      myWidgetsEmpty.querySelector('strong').textContent = '没有找到相关的小组件';
+      myWidgetsEmpty.querySelector('p').textContent = '换一个关键词试试看。';
+    } else {
+      myWidgetsEmpty.querySelector('strong').textContent = '桌面上还没有小组件';
+      myWidgetsEmpty.querySelector('p').textContent = '到“全部组件”中挑选一个添加到桌面吧。';
+    }
+  }
+  if (myWidgetsSummary) {
+    myWidgetsSummary.textContent = searchQuery
+      ? `找到 ${visibleGroups.length} 类、${visibleTotal} 个桌面组件`
+      : (instanceTotal ? `桌面共 ${instanceTotal} 个 · 已合并为 ${myWidgetGroups.length} 类` : '桌面上暂未添加组件');
+  }
+  if (mineNavCount) {
+    mineNavCount.textContent = instanceTotal;
+    mineNavCount.hidden = instanceTotal === 0;
+  }
+  if (myWidgetsFootHint) myWidgetsFootHint.textContent = managingMyWidgets ? '点击“删除”可移除对应的桌面组件' : '相同组件已自动合并显示 · 点击右上角管理';
+  if (manageWidgetsButton) {
+    manageWidgetsButton.textContent = managingMyWidgets ? '完成管理' : '管理';
+    manageWidgetsButton.classList.toggle('is-active', managingMyWidgets);
+    manageWidgetsButton.disabled = instanceTotal === 0;
+  }
+}
+
+async function refreshMyWidgets() {
+  try {
+    const groups = await ipcRenderer.invoke('my-widgets-list');
+    myWidgetGroups = Array.isArray(groups) ? groups : [];
+    if (activeView === 'mine') renderMyWidgets();
+    else {
+      const total = myWidgetGroups.reduce((sum, group) => sum + group.count, 0);
+      if (mineNavCount) { mineNavCount.textContent = total; mineNavCount.hidden = total === 0; }
+    }
+  } catch (_) {
+    myWidgetGroups = [];
+    if (activeView === 'mine') renderMyWidgets();
+  }
+}
+
+async function refreshLibraryCounts() {
+  try {
+    const data = await ipcRenderer.invoke('widgets-list');
+    const counts = new Map((data.widgets || []).map((widget) => [widget.id, Number(widget.count || 0)]));
+    widgets.forEach((widget) => {
+      widget.count = counts.get(widget.id) || 0;
+      const item = itemCache[widget.id];
+      const meta = item && item.querySelector('.item-meta');
+      if (meta) meta.textContent = widget.count ? `桌面已有 ${widget.count} 个` : '点击添加';
+    });
+  } catch (_) {}
+}
+
+function showLibrary() {
+  activeView = 'library';
+  if (libraryView) libraryView.hidden = false;
+  if (myWidgetsView) myWidgetsView.hidden = true;
+}
+
+async function showMyWidgets() {
+  activeView = 'mine';
+  if (libraryView) libraryView.hidden = true;
+  if (myWidgetsView) myWidgetsView.hidden = false;
+  renderNav();
+  await refreshMyWidgets();
+}
+
+// 等比缩放预览到正方形预览区内；预览保持组件原始比例，不拉伸、不裁切。
 function fitScaler(item, w) {
-  const { width: iw, height: ih } = item.getBoundingClientRect();
-  if (!iw || !ih) return;
-  const availW = iw - 10, availH = ih - 26;   // 底部留名字空间
+  const box = item.querySelector('.box');
+  const { width: availW, height: availH } = box ? box.getBoundingClientRect() : { width: 0, height: 0 };
+  if (!availW || !availH) return;
   const s = Math.min(availW / (w.w || 300), availH / (w.h || 150));
   item._scaler.style.transform = `scale(${Math.max(0.2, s)})`;
 }
@@ -115,7 +352,7 @@ function fitScaler(item, w) {
 const ro = typeof ResizeObserver === 'function' ? new ResizeObserver((entries) => {
   entries.forEach((en) => {
     const item = en.target;
-    const w = widgets.find((x) => x.id === item.dataset.wid);
+    const w = item._previewWidget || widgets.find((x) => x.id === item.dataset.wid);
     if (w) fitScaler(item, w);
   });
 }) : null;
@@ -128,8 +365,9 @@ function clearInsertIndicator() {
 // 计算插入位置：找鼠标最近的可见卡片，按鼠标在卡片左/右半边判断插到其前/后。
 // 空位（大卡片右侧/下方）会命中最近卡片 → 插到其后，从而把小卡片放进空位。
 function getInsertTarget(cx, cy) {
-  // 组合行内的卡片不参与排序（位置固定），也不作为插入目标
-  const cards = [...grid.querySelectorAll('.item')].filter((c) => c.style.display !== 'none' && c.dataset.wid !== dragId && !c.closest('.pair-row'));
+  // 只允许同尺寸卡片互相排序，防止普通正方形和大正方形重新混在一起。
+  const dragTile = itemCache[dragId] && itemCache[dragId].dataset.tile;
+  const cards = [...grid.querySelectorAll('.item')].filter((c) => c.style.display !== 'none' && c.dataset.wid !== dragId && c.dataset.tile === dragTile);
   if (!cards.length) return null;
   let best = null, bestDist = Infinity;
   cards.forEach((c) => {
@@ -235,12 +473,23 @@ function observeFrames() {
 }
 
 function applyFilter() {
+  if (activeView !== 'library') {
+    renderMyWidgets();
+    return;
+  }
   widgets.forEach((w) => {
     const item = itemCache[w.id];
     if (!item) return;
     const show = (activeCategory === 'all' || w.category === activeCategory)
       && (!searchQuery || w.name.toLowerCase().includes(searchQuery.toLowerCase()));
     item.style.display = show ? '' : 'none';
+  });
+  let previousVisibleTile = '';
+  [...grid.querySelectorAll('.item')].forEach((item) => {
+    if (item.style.display === 'none') { item.classList.remove('group-start'); return; }
+    const startsGroup = item.dataset.tile !== previousVisibleTile;
+    item.classList.toggle('group-start', startsGroup);
+    previousVisibleTile = item.dataset.tile;
   });
   // 显示状态变化后重新观察：视口内可见卡片由 IntersectionObserver 触发排队加载
   if (frameIO) {
@@ -250,6 +499,10 @@ function applyFilter() {
     });
   }
   const anyVisible = widgets.some((w) => itemCache[w.id] && itemCache[w.id].style.display !== 'none');
+  const visibleCount = widgets.filter((w) => itemCache[w.id] && itemCache[w.id].style.display !== 'none').length;
+  const category = categories.find((item) => item.id === activeCategory);
+  if (libraryTitle) libraryTitle.textContent = searchQuery ? '搜索结果' : ((category && category.name) || '全部') + '组件';
+  if (resultCount) resultCount.textContent = searchQuery ? `找到 ${visibleCount} 个与“${searchQuery}”相关的组件` : `共 ${visibleCount} 个 · 旧组件与新组件均已保留`;
   let tip = document.getElementById('emptyTip');
   if (!anyVisible) {
     if (!tip) {
@@ -312,7 +565,15 @@ window.addEventListener('blur', () => {
 // 搜索
 searchInput.addEventListener('input', () => {
   searchQuery = searchInput.value.trim();
-  applyFilter();
+  if (activeView === 'mine') renderMyWidgets();
+  else applyFilter();
+});
+
+mineNav.addEventListener('click', () => { showMyWidgets(); });
+manageWidgetsButton.addEventListener('click', () => {
+  if (!myWidgetGroups.reduce((sum, group) => sum + group.count, 0)) return;
+  managingMyWidgets = !managingMyWidgets;
+  renderMyWidgets();
 });
 
 // ---------- 背景透明度调节（右上角，自绘滑块） ----------
@@ -364,38 +625,22 @@ document.addEventListener('mouseup', () => {
   widgets = data.widgets || [];
   renderNav();
   // 创建所有卡片（占位壳立即可见），预览内容由视口监听 + 并发队列按需加载
-  const ordered = widgets.slice();
-  // 组合行：AI 用量监控 + 日历·全景 独占一整行、左右并排（占满 6 列 × 4 行，位置固定不参与排序）
-  const PAIR_IDS = ['monitor', 'calendarXL'];
-  let pairRow = null;
+  // 先排普通正方形，再排大正方形；组内保留用户顺序，每组从新行开始。
+  const sourceOrder = new Map(widgets.map((widget, index) => [widget.id, index]));
+  const ordered = widgets.slice().sort((a, b) => tileRank(a) - tileRank(b) || sourceOrder.get(a.id) - sourceOrder.get(b.id));
+  let previousTile = '';
   ordered.forEach((w, i) => {
     const item = makeItem(w);
+    const currentTile = item.dataset.tile;
+    if (currentTile !== previousTile) item.classList.add('group-start');
+    previousTile = currentTile;
     item.style.animationDelay = `${30 + i * 35}ms`;
     itemCache[w.id] = item;
-    if (PAIR_IDS.includes(w.id)) {
-      item.style.gridColumn = '';   // 清除 3 列跨度，交给 .pair-row 平分宽度
-      item.style.gridRow = '';
-      item.draggable = false;
-      if (!pairRow) {
-        pairRow = document.createElement('div');
-        pairRow.className = 'pair-row';
-        grid.appendChild(pairRow);
-      }
-      pairRow.appendChild(item);
-    } else {
-      grid.appendChild(item);
-    }
+    grid.appendChild(item);
     if (ro) ro.observe(item);
     fitScaler(item, w);
   });
-  // 固定左右顺序：AI 用量监控在左、日历·全景在右（与注册/自定义顺序无关）
-  if (pairRow) {
-    const mon = itemCache['monitor'], xl = itemCache['calendarXL'];
-    if (mon && xl) {
-      if (pairRow.firstChild !== mon) pairRow.insertBefore(mon, pairRow.firstChild);
-      if (pairRow.lastChild !== xl) pairRow.appendChild(xl);
-    }
-  }
   applyFilter();
   observeFrames();   // 视口内的卡片开始排队加载预览
+  refreshMyWidgets();
 })();

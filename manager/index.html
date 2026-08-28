@@ -35,14 +35,47 @@
           <span class="search-icon">🔍</span>
           <input id="searchInput" type="text" placeholder="搜索组件">
         </div>
+        <button class="mine-nav" id="mineNav" type="button">
+          <span class="mine-nav-icon">✦</span>
+          <span>我的小组件</span>
+          <span class="mine-nav-count" id="mineNavCount" hidden>0</span>
+        </button>
         <div class="nav" id="nav"><!-- JS 渲染分类 --></div>
       </div>
       <div class="content">
-        <div class="grid" id="grid"><!-- JS 渲染 --></div>
-        <div class="footbar">
-          <span class="foot-hint">点击卡片添加 · 拖动卡片排序 · 滚动查看</span>
-          <span class="foot-ver">v0.2.0</span>
-        </div>
+        <section class="library-view" id="libraryView">
+          <div class="library-head">
+            <div>
+              <strong id="libraryTitle">全部组件</strong>
+              <span id="resultCount">正在载入组件…</span>
+            </div>
+            <span class="library-tip">普通正方形 · 大正方形 · 单击添加</span>
+          </div>
+          <div class="grid" id="grid"><!-- JS 渲染 --></div>
+          <div class="footbar">
+            <span class="foot-hint">点击卡片添加 · 拖动同尺寸卡片排序 · 滚动查看</span>
+            <span class="foot-ver">v0.2.0</span>
+          </div>
+        </section>
+        <section class="my-widgets-view" id="myWidgetsView" hidden>
+          <div class="library-head my-widgets-head">
+            <div>
+              <strong>我的小组件</strong>
+              <span id="myWidgetsSummary">正在读取桌面上的组件…</span>
+            </div>
+            <button class="manage-widgets" id="manageWidgets" type="button">管理</button>
+          </div>
+          <div class="my-widgets-grid" id="myWidgetsGrid"></div>
+          <div class="my-widgets-empty" id="myWidgetsEmpty" hidden>
+            <span class="empty-symbol">✦</span>
+            <strong>桌面上还没有小组件</strong>
+            <p>到“全部组件”中挑选一个添加到桌面吧。</p>
+          </div>
+          <div class="footbar">
+            <span class="foot-hint" id="myWidgetsFootHint">相同组件已自动合并显示</span>
+            <span class="foot-ver">桌面组件</span>
+          </div>
+        </section>
       </div>
     </div>
   </div>

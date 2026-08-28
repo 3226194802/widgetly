@@ -8,7 +8,6 @@ let workbenchReady = false;
 let pendingBridge = null;
 let activeRequestId = '';
 let draftSaveTimer = null;
-let opacityHideTimer = null;
 
 function setStatus(text, type = '') {
   $('miniStatus').textContent = text || '';
@@ -16,10 +15,8 @@ function setStatus(text, type = '') {
 }
 function applyOpacity() {
   const opacity = Math.max(0, Math.min(1, Number(state.bgOpacity)));
-  $('tint').style.opacity = String(opacity);
-  const transparency = Math.round((1 - opacity) * 100);
-  $('opacityInput').value = String(transparency);
-  $('opacityValue').textContent = `${transparency}%`;
+  document.documentElement.style.setProperty('--widgetly-bg-alpha', String(opacity));
+  document.body.dataset.backgroundClear = opacity <= 0.001 ? 'true' : 'false';
 }
 function applyResult(result, persist = true) {
   state.lastResult = String(result || '');
@@ -178,7 +175,7 @@ $('promptInput').addEventListener('keydown', (event) => {
 });
 $('optimizeButton').addEventListener('click', quickOptimize);
 $('workspaceButton').addEventListener('click', openProfessional);
-$('settingsButton').addEventListener('click', api.openMenu);
+$('settingsButton').addEventListener('click', () => api.openMenu());
 
 // 组件本体右键菜单：先激活透明窗口，再阻止系统默认菜单。
 // 仅在小组件/结果形态生效，专业工作台 iframe 内仍保留编辑器自己的右键行为。
@@ -243,11 +240,6 @@ window.addEventListener('dblclick', (event) => {
 }, true);
 
 api.onForceMini(leaveWorkspace);
-api.onShowOpacity(() => {
-  $('opacityPanel').hidden = false;
-  clearTimeout(opacityHideTimer);
-  opacityHideTimer = setTimeout(() => { $('opacityPanel').hidden = true; }, 3500);
-});
 api.onOpenModelSettings(() => {
   ensureWorkbench({
     visible: true,
@@ -256,22 +248,19 @@ api.onOpenModelSettings(() => {
     action: 'model-settings',
   });
 });
-$('opacityInput').addEventListener('input', () => {
-  const transparency = Number($('opacityInput').value);
-  state.bgOpacity = 1 - transparency / 100;
-  applyOpacity();
-  clearTimeout(opacityHideTimer);
-});
-$('opacityInput').addEventListener('change', () => {
-  api.setOpacity(state.bgOpacity);
-  opacityHideTimer = setTimeout(() => { $('opacityPanel').hidden = true; }, 1600);
-});
 $('closeAboutButton').addEventListener('click', () => { $('aboutPanel').hidden = true; });
 $('aboutPanel').addEventListener('mousedown', (event) => {
   if (event.target === $('aboutPanel')) $('aboutPanel').hidden = true;
 });
 
 api.onState(applyState);
+api.onBackgroundTransparency((data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  state.bgOpacity = Math.max(0, Math.min(1, Number.isFinite(alpha) ? alpha : 1 - percent / 100));
+  applyOpacity();
+});
 api.init().then((initial) => {
   applyState(initial);
   $('promptInput').focus();

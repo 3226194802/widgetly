@@ -21,7 +21,7 @@ function setup({ instance, win, save }) {
   let settingsWin = null;
 
   function persist() {
-    instance.config = { folder, duration, order, locked };
+    instance.config = { ...(instance.config || {}), folder, duration, order, locked };
     save();
   }
   function toggleLock() {
@@ -123,6 +123,7 @@ function setup({ instance, win, save }) {
   });
 
   // 设置窗口 IPC
+  ipcMain.on('gallery:settings-open:' + instId, openSettings);
   ipcMain.handle('gallery:settings-init:' + instId, () => ({ folder, duration, order }));
   ipcMain.on('gallery:settings-pick:' + instId, pickFolder);
   ipcMain.on('gallery:settings-set:' + instId, (_e, cfg) => {
@@ -135,20 +136,6 @@ function setup({ instance, win, save }) {
   });
   ipcMain.on('gallery:settings-close:' + instId, () => {
     if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close();
-  });
-
-  // 右键菜单：设置（独立大窗口）/ 锁定位置 / 退出
-  win.webContents.on('context-menu', () => {
-    if (!win.isFocused()) win.focus();
-    try {
-      Menu.buildFromTemplate([
-        { label: '设置…', click: openSettings },
-        { type: 'separator' },
-        { label: '锁定位置', type: 'checkbox', checked: locked, click: toggleLock },
-        { type: 'separator' },
-        { label: '退出此组件', click: quitWidget },
-      ]).popup({ window: win });
-    } catch (_) {}
   });
 
   win.webContents.on('did-finish-load', () => {

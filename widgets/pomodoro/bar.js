@@ -168,15 +168,19 @@ window.addEventListener('blur', () => ipcRenderer.send('drag-end'));
 document.addEventListener('contextmenu', (e) => {
   ipcRenderer.send('activate');
   e.preventDefault();
-  ipcRenderer.send('pomodoro:menu:' + instId);
+  ipcRenderer.send('widgetly-common-menu:' + instId);
 });
 
 // ---------- 背景透明度（自绘滑块，与方型一致） ----------
 const veilEl = document.getElementById('veil');
 let veilVal = 45;
 function applyOpacity(alpha) {
-  veilVal = Math.round((1 - alpha) * 100);
-  veilEl.style.opacity = String(alpha);
+  const safeAlpha = Math.max(0, Math.min(1, Number(alpha)));
+  veilVal = Math.round((1 - safeAlpha) * 100);
+  veilEl.style.opacity = String(safeAlpha);
+  const card = document.getElementById('card');
+  card.style.backdropFilter = safeAlpha === 0 ? 'none' : '';
+  card.style.webkitBackdropFilter = safeAlpha === 0 ? 'none' : '';
   paintPanel();
 }
 const panel = $('opPanel');
@@ -207,6 +211,12 @@ function scheduleHide() {
   hideTimer = setTimeout(() => { panel.hidden = true; }, 2200);
 }
 ipcRenderer.on('show-opacity-panel:' + instId, showPanel);
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  applyOpacity(Number.isFinite(alpha) ? alpha : 1 - percent / 100);
+});
 let opDragging = false;
 slider.addEventListener('mousedown', (e) => {
   e.preventDefault();

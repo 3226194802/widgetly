@@ -1,4 +1,4 @@
-// 系统监测组件 —— 渲染进程：3 个圆环指标 + 背景透明度面板 + 外观（底色/字体色/进度条色）
+// 系统监测组件 —— 渲染进程：3 个圆环指标 + 外观（底色/字体色/进度条色）
 const { ipcRenderer } = require('electron');
 const instId = new URLSearchParams(location.search).get('inst') || 'sysmon-1';
 
@@ -19,7 +19,10 @@ function hexToRgba(hex, a) {
   return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, a == null ? 1 : a))})`;
 }
 function applyStyle() {
-  card.style.background = hexToRgba(style.bgColor, style.bgOpacity);
+  const alpha = Math.max(0, Math.min(1, Number(style.bgOpacity)));
+  card.style.background = hexToRgba(style.bgColor, alpha);
+  card.style.backdropFilter = alpha === 0 ? 'none' : '';
+  card.style.webkitBackdropFilter = alpha === 0 ? 'none' : '';
   document.documentElement.style.setProperty('--fontc', style.fontColor || '#f2eee6');
 }
 
@@ -93,6 +96,13 @@ ipcRenderer.on('sysmon:style:' + instId, (_e, s) => {
   if (s && typeof s === 'object') Object.assign(style, s);
   applyStyle();
 });
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  style.bgOpacity = Math.max(0, Math.min(1, Number.isFinite(alpha) ? alpha : 1 - percent / 100));
+  applyStyle();
+});
 
 // 预览模式（管理器内 iframe 无主进程推送）：展示示例指标，避免空白
 if (instId === 'preview') {
@@ -110,81 +120,28 @@ if (instId === 'preview') {
     : ['cpu', 'ram', 'gpu'].map(sample));
 }
 
-// ---------- 背景透明度面板（自绘滑杆：0%=不透明，100%=全透明只剩毛玻璃） ----------
-const panel = document.getElementById('opPanel');
-const slider = document.getElementById('opSlider');
-const opFill = document.getElementById('opFill');
-const opThumb = document.getElementById('opThumb');
-const opVal = document.getElementById('opVal');
-let veilVal = Math.round((1 - style.bgOpacity) * 100);
-let hideTimer = null;
-function paintPanel() {
-  opFill.style.width = veilVal + '%';
-  opThumb.style.left = veilVal + '%';
-  opVal.textContent = veilVal + '%';
-}
-function setFromX(clientX) {
-  const r = slider.getBoundingClientRect();
-  if (!r.width) return;
-  veilVal = Math.max(0, Math.min(100, Math.round((clientX - r.left) / r.width * 100)));
-  style.bgOpacity = 1 - veilVal / 100;
-  applyStyle();
-  paintPanel();
-}
-function showPanel() {
-  paintPanel();
-  panel.hidden = false;
-  scheduleHide();   // 打开后自动计时收起（修复：不拖动滑杆时面板一直不消失）
-}
-function scheduleHide() {
-  if (hideTimer) clearTimeout(hideTimer);
-  hideTimer = setTimeout(() => { panel.hidden = true; }, 2200);
-}
-ipcRenderer.on('show-opacity-panel:' + instId, () => {
-  veilVal = Math.round((1 - style.bgOpacity) * 100);
-  showPanel();
-});
-let opDragging = false;
-slider.addEventListener('mousedown', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  opDragging = true;
-  if (hideTimer) clearTimeout(hideTimer);   // 拖动期间不自动收起
-  setFromX(e.clientX);
-});
-document.addEventListener('mousemove', (e) => { if (opDragging) setFromX(e.clientX); });
-document.addEventListener('mouseup', () => {
-  if (!opDragging) return;
-  opDragging = false;
-  ipcRenderer.send('save-bg-opacity:' + instId, style.bgOpacity);
-  scheduleHide();
-});
-document.addEventListener('mousedown', (e) => {
-  if (!panel.hidden && !panel.contains(e.target)) panel.hidden = true;
-});
-
-// ---------- 设置（选择对象） ----------
+// ---------- 齿轮与右键：只进入统一独立菜单 ----------
 document.getElementById('btnSettings').addEventListener('click', () => {
-  ipcRenderer.send('sysmon:settings-open:' + instId);
+  ipcRenderer.send('widgetly-common-menu:' + instId);
 });
 
-// ---------- 拖动（锁定禁拖；面板内不拖） ----------
+// ---------- 拖动（锁定禁拖） ----------
 ipcRenderer.on('lock:' + instId, (_e, on) => { locked = !!on; });
 document.addEventListener('mousedown', (e) => {
   ipcRenderer.send('activate');
   if (e.button !== 0) return;
   if (locked) return;
-  if (e.target.closest && e.target.closest('.gear, .op-panel')) return;
+  if (e.target.closest && e.target.closest('.gear')) return;
   ipcRenderer.send('drag-start');
 });
 window.addEventListener('mouseup', () => ipcRenderer.send('drag-end'));
 window.addEventListener('blur', () => ipcRenderer.send('drag-end'));
 
-// ---------- 右键菜单 ----------
-// 注意：不能 preventDefault，否则会吞掉主进程的 context-menu 事件导致菜单弹不出来
-document.addEventListener('contextmenu', () => {
+document.addEventListener('contextmenu', (event) => {
+  event.preventDefault();
+  event.stopImmediatePropagation();
   ipcRenderer.send('activate');
-});
+  ipcRenderer.send('widgetly-common-menu:' + instId);
+}, true);
 
 applyStyle();
-paintPanel();

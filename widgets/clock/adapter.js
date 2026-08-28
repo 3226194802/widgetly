@@ -120,6 +120,8 @@ function setup({ instance, win, save }) {
       minuteColor: cfg.minuteColor || '#ffffff',
     };
   });
+  // 统一右键菜单直接打开外观页，不再先弹旧组件菜单。
+  ipcMain.on('clock:appearance-open:' + instId, openAppearance);
   ipcMain.on('clock:appearance:' + instId, (_e, c) => {
     if (c && win && !win.isDestroyed()) win.webContents.send('clock:appearance-color:' + instId, c);
   });

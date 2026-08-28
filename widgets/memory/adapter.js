@@ -12,6 +12,7 @@ const DEFAULTS = {
     fontColor: '#f2eee6',    // 字体颜色
     bgMode: 'frosted',       // 背景：transparent | frosted | solid
     bgColor: '#191722',      // 纯色背景色（solid 模式 / frosted 罩层基色）
+    bgOpacity: 0.62,         // 背景不透明度（统一菜单中 38% 背景透明度的旧视觉）
   },
   pinned: false,
   locked: false,
@@ -20,14 +21,22 @@ const DEFAULTS = {
 function setup({ instance, win, save }) {
   const instId = instance.id;
   const saved = { ...DEFAULTS, ...(instance.config || {}) };
-  let appearance = { ...DEFAULTS.appearance, ...(saved.appearance || {}) };
+  const savedAppearance = saved.appearance || {};
+  const legacyAlpha = Number.isFinite(Number(savedAppearance.bgOpacity))
+    ? Math.max(0, Math.min(1, Number(savedAppearance.bgOpacity)))
+    : savedAppearance.bgMode === 'transparent' ? 0
+      : savedAppearance.bgMode === 'solid' ? 1 : DEFAULTS.appearance.bgOpacity;
+  let appearance = { ...DEFAULTS.appearance, ...savedAppearance, bgOpacity: legacyAlpha };
   let pinned = !!saved.pinned;
   let locked = !!saved.locked;
   let appearanceWin = null;
   let ramTimer = null, diskTimer = null;
 
+  // common adapter 随后会读取该字段；先把旧的三态背景迁移成连续 alpha，且不丢失其他配置。
+  instance.config = { ...(instance.config || {}), appearance: { ...appearance } };
+
   function persist() {
-    instance.config = { appearance, pinned, locked };
+    instance.config = { ...(instance.config || {}), appearance: { ...appearance }, pinned, locked };
     save();
   }
   function pushAppearance() {
@@ -102,6 +111,12 @@ function setup({ instance, win, save }) {
   ipcMain.on('memory:appearance:' + instId, (_e, a) => {
     if (a && typeof a === 'object') {
       appearance = { ...appearance, ...a };
+      if (Number.isFinite(Number(a.bgOpacity))) {
+        appearance.bgOpacity = Math.max(0, Math.min(1, Number(a.bgOpacity)));
+        if (appearance.bgMode === 'transparent' && appearance.bgOpacity > 0) appearance.bgMode = 'frosted';
+      } else if (a.bgMode === 'transparent') appearance.bgOpacity = 0;
+      else if (a.bgMode === 'solid') appearance.bgOpacity = 1;
+      else if (a.bgMode === 'frosted') appearance.bgOpacity = DEFAULTS.appearance.bgOpacity;
       persist();
       pushAppearance();
     }
@@ -112,7 +127,6 @@ function setup({ instance, win, save }) {
   ipcMain.on('memory:menu:' + instId, openMenu);
   ipcMain.on('memory:quit:' + instId, quitWidget);
 
-  win.webContents.on('context-menu', openMenu);
   win.webContents.on('did-finish-load', () => {
     pushAppearance();
     pushRam();

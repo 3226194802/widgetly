@@ -17,6 +17,13 @@ html, body {
   font-display: swap;
   src: url('../widgets/clock/OpenRunde-Bold.otf') format('opentype');
 }
+@font-face {
+  font-family: 'Widgetly Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../widgets/clock/Montserrat-Variable.ttf') format('truetype');
+}
 
 .app {
   position: absolute; inset: 0;   /* 铺满窗口，无白框 */
@@ -168,6 +175,44 @@ html.dragging .sidebar {
 .search input::placeholder { color: rgba(23, 53, 39, 0.45); }
 
 .nav { display: flex; flex-direction: column; gap: 4px; }
+.mine-nav {
+  appearance:none;
+  width:100%;
+  border:0;
+  display:flex; align-items:center; gap:9px;
+  padding:9px 12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.30);
+  color:rgba(23,53,39,.82);
+  font:600 13px/1 "Segoe UI Variable Text","Microsoft YaHei UI",sans-serif;
+  cursor:pointer;
+  text-align:left;
+  transition:background .18s ease,color .18s ease,transform .18s cubic-bezier(.34,1.4,.64,1);
+}
+.mine-nav:hover { background:rgba(255,255,255,.52); color:#173527; }
+.mine-nav:active { transform:scale(.97); }
+.mine-nav.active { background:rgba(255,255,255,.88); color:#0a8f6a; box-shadow:0 3px 10px rgba(30,90,60,.12); }
+.mine-nav-icon {
+  width:22px; height:22px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.52);
+  color:#159a72;
+  font-size:14px;
+}
+.mine-nav.active .mine-nav-icon { background:rgba(18,184,134,.16); }
+.mine-nav-count {
+  margin-left:auto;
+  min-width:18px;
+  padding:1px 5px;
+  box-sizing:border-box;
+  border-radius:99px;
+  background:rgba(21,154,114,.15);
+  color:#087958;
+  font-size:10px;
+  font-weight:750;
+  text-align:center;
+}
 .nav-item {
   display: flex; align-items: center; gap: 9px;
   padding: 9px 12px;
@@ -199,22 +244,161 @@ html.dragging .sidebar {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: #a5cbe6;   /* 天空蓝 */
+  background:
+    radial-gradient(circle at 92% 6%, rgba(255,255,255,.22), transparent 31%),
+    linear-gradient(155deg, #a9d0e9 0%, #9dc3e1 100%);
 }
+.library-view,.my-widgets-view {
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+}
+.library-view[hidden],.my-widgets-view[hidden] { display:none !important; }
+.library-head {
+  flex:none;
+  min-height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:11px 20px 9px;
+}
+.library-head > div { min-width:0; display:grid; gap:3px; }
+.library-head strong {
+  color:#173d4c;
+  font-size:17px;
+  font-weight:750;
+  letter-spacing:-.25px;
+  line-height:1.2;
+}
+.library-head span { color:rgba(23,61,76,.55); font-size:10px; line-height:1.35; }
+.library-tip {
+  flex:none;
+  padding:5px 9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.42);
+  border:1px solid rgba(255,255,255,.48);
+}
+.manage-widgets {
+  flex:none;
+  appearance:none;
+  border:1px solid rgba(255,255,255,.66);
+  border-radius:10px;
+  padding:7px 13px;
+  background:rgba(255,255,255,.55);
+  color:#176f59;
+  font:700 11.5px/1 "Segoe UI Variable Text","Microsoft YaHei UI",sans-serif;
+  cursor:pointer;
+  box-shadow:inset 0 1px rgba(255,255,255,.58),0 3px 9px rgba(37,83,106,.08);
+  transition:transform .18s ease,background .18s ease,color .18s ease;
+}
+.manage-widgets:hover:not(:disabled) { transform:translateY(-1px); background:rgba(255,255,255,.82); }
+.manage-widgets.is-active { background:#168a68; border-color:#168a68; color:#fff; }
+.manage-widgets:disabled { opacity:.48; cursor:default; }
 .grid {
   flex: 1;
   display: grid;
-  /* 6 列 × 148px 行高，密集流（dense）：大小卡片混排时自动回填空隙，无大块空白 */
-  grid-template-columns: repeat(6, 1fr);
-  grid-auto-rows: 148px;
-  grid-auto-flow: row dense;
-  gap: 8px;
-  padding: 6px 12px 8px 6px;
+  /* 12 列只形成两种规格：普通正方形占 3 列，大正方形占 6 列。 */
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: var(--grid-unit, 60px);
+  grid-auto-flow: row;
+  align-content:start;
+  gap: 10px;
+  padding: 4px 18px 16px;
   box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter:stable;
 }
-.grid::-webkit-scrollbar { width: 0; }
+.grid::-webkit-scrollbar { width:6px; }
+.grid::-webkit-scrollbar-thumb { border-radius:8px; background:rgba(37,82,102,.2); }
+.my-widgets-grid {
+  flex:1;
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(178px,1fr));
+  align-content:start;
+  gap:12px;
+  padding:4px 18px 16px;
+  box-sizing:border-box;
+  overflow:auto;
+  scrollbar-gutter:stable;
+}
+.my-widgets-grid::-webkit-scrollbar { width:6px; }
+.my-widgets-grid::-webkit-scrollbar-thumb { border-radius:8px; background:rgba(37,82,102,.2); }
+.my-widget-card { min-width:0; min-height:178px; cursor:default; }
+.my-widget-card .box { bottom:43px; }
+.my-widget-card .name { z-index:5; }
+.repeat-badge {
+  position:absolute;
+  left:12px;
+  bottom:42px;
+  z-index:6;
+  min-width:27px;
+  padding:3px 7px;
+  border-radius:8px;
+  background:rgba(17,65,82,.78);
+  border:1px solid rgba(255,255,255,.38);
+  color:#fff;
+  font:750 10px/1 "Segoe UI Variable Text","Microsoft YaHei UI",sans-serif;
+  box-shadow:0 3px 8px rgba(20,61,79,.18);
+}
+.my-widget-manage-layer {
+  position:absolute;
+  z-index:10;
+  inset:8px;
+  display:none;
+  flex-direction:column;
+  padding:13px;
+  box-sizing:border-box;
+  border-radius:14px;
+  color:#173d4c;
+  background:linear-gradient(155deg,rgba(243,253,250,.96),rgba(219,240,245,.94));
+  border:1px solid rgba(255,255,255,.82);
+  box-shadow:0 8px 22px rgba(24,75,94,.14);
+}
+.my-widget-card.is-managing .my-widget-manage-layer { display:flex; animation:manageIn .18s ease-out both; }
+@keyframes manageIn { from { opacity:0; transform:scale(.96); } to { opacity:1; transform:scale(1); } }
+.my-widget-manage-title { flex:none; font-size:13px; font-weight:760; letter-spacing:.01em; padding-bottom:9px; border-bottom:1px solid rgba(23,61,76,.13); }
+.my-widget-instance-list { flex:1; min-height:0; overflow:auto; padding-top:6px; display:flex; flex-direction:column; gap:5px; }
+.my-widget-instance {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  min-height:25px;
+  color:rgba(23,61,76,.72);
+  font-size:10.5px;
+}
+.my-widget-instance span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.my-widget-remove {
+  flex:none;
+  appearance:none;
+  border:0;
+  border-radius:7px;
+  padding:4px 7px;
+  background:rgba(220,69,73,.12);
+  color:#bb3c44;
+  font:700 10px/1 "Segoe UI Variable Text","Microsoft YaHei UI",sans-serif;
+  cursor:pointer;
+}
+.my-widget-remove:hover:not(:disabled) { background:#d94e55; color:#fff; }
+.my-widget-remove:disabled { opacity:.55; cursor:wait; }
+.my-widgets-empty {
+  flex:1;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  color:rgba(23,61,76,.7);
+  text-align:center;
+}
+.my-widgets-empty[hidden] { display:none; }
+.my-widgets-empty .empty-symbol { font-size:28px; color:#168a68; margin-bottom:8px; }
+.my-widgets-empty strong { font-size:14px; }
+.my-widgets-empty p { margin:6px 0 0; font-size:11px; color:rgba(23,61,76,.53); }
 
 /* 卡片：占据整格，预览缩放居中；名字悬浮在卡片下方 */
 .item {
@@ -225,10 +409,18 @@ html.dragging .sidebar {
   cursor: pointer;
   opacity: 0;
   overflow: hidden;
+  aspect-ratio:1 / 1;
+  border-radius:19px;
+  background:linear-gradient(158deg,rgba(255,255,255,.39),rgba(255,255,255,.22));
+  border:1px solid rgba(255,255,255,.58);
+  box-shadow:inset 0 1px rgba(255,255,255,.38),0 7px 20px rgba(44,90,116,.075);
   animation: itemIn 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) forwards;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:transform .2s cubic-bezier(.34,1.25,.64,1),box-shadow .2s ease,border-color .2s ease;
 }
-.item:hover { transform: scale(1.03); z-index: 2; }
+.item:hover { transform:translateY(-2px); z-index:2; border-color:rgba(255,255,255,.86); box-shadow:inset 0 1px rgba(255,255,255,.48),0 12px 25px rgba(37,83,106,.15); }
+.item.group-start { grid-column-start:1 !important; grid-column-end:span var(--tile-cols) !important; }
+.item.tile-large-square { border-radius:23px; }
+.item.tile-square { border-radius:19px; }
 .item.dragging { opacity: 0.35; }
 .item.insert-before { box-shadow: -3px 0 0 #0a84ff; }
 .item.insert-after { box-shadow: 3px 0 0 #0a84ff; }
@@ -237,34 +429,20 @@ html.dragging .sidebar {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* 组合行：AI 用量监控 + 日历·全景 独占一整行、左右并排（6 列 × 4 行，位置固定） */
-.pair-row {
-  grid-column: 1 / -1;
-  grid-row: span 4;
-  display: flex;
-  gap: 8px;
-  min-width: 0;
-  min-height: 0;
-}
-.pair-row .item {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 100%;
-}
-
 /* 预览缩放容器：按格子尺寸等比缩放 iframe 内容 */
 .box {
-  position: absolute; inset: 0;
+  position:absolute; left:9px; right:9px; top:9px; bottom:43px;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
+  border-radius:14px;
 }
 /* 占位壳：预览 iframe 尚未加载完成时显示（毛玻璃空壳，避免卡片"闪现空白"） */
 .box::before {
   content: '';
-  position: absolute; inset: 4px;
-  border-radius: 18px;
-  background: linear-gradient(168deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.24));
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  position:absolute; inset:0;
+  border-radius:14px;
+  background:linear-gradient(155deg,rgba(242,249,253,.66),rgba(211,231,243,.42));
+  border:1px solid rgba(255,255,255,.42);
 }
 .scaler { position: relative; transform-origin: center center; }
 .frame {
@@ -272,7 +450,7 @@ html.dragging .sidebar {
   border: none;
   background: transparent;
   pointer-events: none;
-  border-radius: 22px;
+  border-radius:18px;
   overflow: hidden;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -284,27 +462,28 @@ html.dragging .sidebar {
 /* 名称（Open Runde，悬浮在组件下方） */
 .name {
   position: absolute;
-  left: 50%; bottom: 6px;
-  transform: translateX(-50%);
-  padding: 2px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.88);   /* 去掉 6px 实时模糊：软件渲染下 20+ 名牌累计开销不小，纯色视觉无差 */
-  font-family: 'Open Runde', -apple-system, 'PingFang SC', sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.3px;
-  color: rgba(23, 53, 39, 0.85);
-  white-space: nowrap;
-  transition: background 0.15s ease, color 0.15s ease;
+  left:13px; right:13px; bottom:9px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  font-family:"Segoe UI Variable Text","Microsoft YaHei UI","PingFang SC",sans-serif;
+  color:rgba(22,57,71,.88);
   z-index: 3;
 }
-.item:hover .name { background: rgba(255, 255, 255, 0.95); color: rgba(23, 53, 39, 0.95); }
+.name strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11.5px; font-weight:700; line-height:1.25; letter-spacing:.01em; }
+.item-meta { flex:none; color:rgba(22,57,71,.43); font-family:'Widgetly Sans',"Microsoft YaHei UI",sans-serif; font-size:8px; font-weight:520; white-space:nowrap; }
+.item:hover .name { color:#123746; }
+.tile-large-square .name strong { font-size:12.5px; }
+.tile-large-square .box { left:12px; right:12px; top:12px; bottom:47px; border-radius:17px; }
+.tile-large-square .frame,.tile-large-square .box::before { border-radius:17px; }
 
 /* 底栏 */
 .footbar {
   position: relative; z-index: 2;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 22px 12px;
+  padding:7px 22px 11px;
   font-size: 11px; color: rgba(40, 60, 90, 0.7);   /* 天空蓝背景上深色文字 */
-  background: #a5cbe6;
+  background:transparent;
 }

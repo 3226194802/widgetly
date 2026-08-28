@@ -149,11 +149,14 @@ const opThumb = $('opThumb');
 const opVal = $('opVal');
 let veilVal = 60;   // 透明度百分比（0=不透明，100=全透明）
 function paintSlider(v) {
-  veilVal = v;
-  opFill.style.width = v + '%';
-  opThumb.style.left = v + '%';
-  opVal.textContent = v + '%';
-  document.querySelector('.veil').style.opacity = (1 - v / 100).toFixed(3);
+  veilVal = Math.max(0, Math.min(100, Number(v) || 0));
+  opFill.style.width = veilVal + '%';
+  opThumb.style.left = veilVal + '%';
+  opVal.textContent = Math.round(veilVal) + '%';
+  document.querySelector('.veil').style.opacity = (1 - veilVal / 100).toFixed(3);
+  const clear = veilVal >= 100;
+  card.style.backdropFilter = clear ? 'none' : '';
+  card.style.webkitBackdropFilter = clear ? 'none' : '';
 }
 function setFromX(clientX) {
   const r = slider.getBoundingClientRect();
@@ -178,6 +181,12 @@ ipcRenderer.on('show-opacity-panel:' + instId, () => { panel.hidden = false; });
 ipcRenderer.on('bg-opacity:' + instId, (_e, bgAlpha) => {
   const v = Math.round((1 - bgAlpha) * 100);
   paintSlider(v);
+});
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  paintSlider(Number.isFinite(percent) ? percent : (1 - alpha) * 100);
 });
 
 document.addEventListener('mousedown', (e) => {

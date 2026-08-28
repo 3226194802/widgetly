@@ -1,15 +1,15 @@
 // Widgetly AI 提示词优化组件：轻量壳 + 按需加载的 Prompt Optimizer v2.11.8 工作台。
-const { ipcMain, Menu, screen } = require('electron');
+const { ipcMain, screen } = require('electron');
 
 const MINI_SIZE = { w: 360, h: 150 };
 const RESULT_SIZE = { w: 360, h: 330 };
 const WORKSPACE_DEFAULT = { w: 1180, h: 760 };
 const WIDGET_LIMITS = {
-  minWidth: 300,
+  minWidth: 260,
   maxWidth: 760,
-  minMiniHeight: 128,
+  minMiniHeight: 108,
   maxMiniHeight: 420,
-  minResultHeight: 300,
+  minResultHeight: 230,
   maxResultHeight: 760,
 };
 const controllers = new Map();
@@ -199,41 +199,13 @@ function setup({ instance, win, save }) {
     }
     pushState();
   }
-  function quitWidget() {
-    global.__cfg.instances = global.__cfg.instances.filter((item) => item.id !== instId);
-    save();
-    if (!win.isDestroyed()) win.close();
-  }
   function openModelSettings() {
     openWorkspace('visible');
     win.webContents.send(`prompt:open-model-settings:${instId}`);
   }
   function openMenu() {
-    if (win.isDestroyed()) return;
-    const transparent = Math.round((1 - cfg.bgOpacity) * 100);
-    Menu.buildFromTemplate([
-      { label: '打开专业工作台', click: () => openWorkspace('visible') },
-      { label: '配置 AI 模型…', click: openModelSettings },
-      { label: '优化强度', submenu: [
-        { label: '强度 1 · 基础润色', type: 'radio', checked: cfg.strength === 1, click: () => setStrength(1) },
-        { label: '强度 2 · 结构增强', type: 'radio', checked: cfg.strength === 2, click: () => setStrength(2) },
-        { label: '强度 3 · 专家重构', type: 'radio', checked: cfg.strength === 3, click: () => setStrength(3) },
-      ] },
-      { type: 'separator' },
-      { label: `背景透明度…（${transparent}%）`, click: () => win.webContents.send(`prompt:show-opacity:${instId}`) },
-      { label: '置顶显示', type: 'checkbox', checked: cfg.pinned, click: (item) => {
-        cfg.pinned = !!item.checked;
-        if (workspaceMode !== 'visible') win.setAlwaysOnTop(cfg.pinned, cfg.pinned ? 'floating' : 'normal');
-        persist(); pushState();
-      } },
-      { label: cfg.locked ? '解锁位置' : '锁定位置', click: () => {
-        cfg.locked = !cfg.locked;
-        persist(); pushState();
-      } },
-      { type: 'separator' },
-      { label: '关于开源组件', click: () => win.webContents.send(`prompt:state:${instId}`, { ...state(), showAbout: true }) },
-      { label: '退出此组件', click: quitWidget },
-    ]).popup({ window: win });
+    // 右上角设置按钮与右键统一走公共独立菜单，不再弹出旧的原生二级菜单。
+    ipcMain.emit(`widgetly-common-menu:${instId}`);
   }
   function setStrength(value) {
     cfg.strength = Math.round(clamp(value, 1, 3, 1));
@@ -257,6 +229,9 @@ function setup({ instance, win, save }) {
   });
   on(`prompt:model-settings:${instId}`, openModelSettings);
   on(`prompt:menu:${instId}`, openMenu);
+  on(`prompt:about:${instId}`, () => {
+    if (!win.isDestroyed()) win.webContents.send(`prompt:state:${instId}`, { ...state(), showAbout: true });
+  });
   on(`prompt:bg-opacity:${instId}`, (_event, opacity) => {
     cfg.bgOpacity = clamp(opacity, 0, 1, cfg.bgOpacity);
     persist(); pushState();

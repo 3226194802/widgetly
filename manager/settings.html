@@ -6,7 +6,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
   html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
-  .win { position: absolute; inset: 8px; border-radius: 16px; background: rgba(252,252,253,0.97); border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 12px 32px rgba(0,0,0,0.28); padding: 16px; display: flex; flex-direction: column; gap: 14px; animation: winIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .win { position: absolute; inset: 8px; border-radius: 16px; background: rgba(252,252,253,0.97); border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 12px 32px rgba(0,0,0,0.28); padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.18) transparent; animation: winIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
   @keyframes winIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   .head { display: flex; align-items: center; justify-content: space-between; -webkit-app-region: drag; }
   .title { font-size: 14px; font-weight: 800; color: #1d1d1f; }
@@ -35,6 +35,26 @@
   .copy-btn { flex: none; padding: 4px 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 7px; background: transparent; color: #0a84ff; font-size: 11px; cursor: pointer; font-family: inherit; }
   .copy-btn:hover { background: rgba(10, 132, 255, 0.08); }
   .copy-btn.done { color: #0a8f6a; border-color: rgba(10,143,106,0.4); }
+  .shortcut-row { display: flex; align-items: stretch; gap: 7px; }
+  .shortcut-record {
+    min-width: 0; flex: 1; min-height: 36px; padding: 7px 10px; border: 1px solid rgba(0,0,0,0.14); border-radius: 9px;
+    background: #fff; color: #1d1d1f; font-size: 12px; font-weight: 750; font-family: inherit; font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; outline: none;
+  }
+  .shortcut-record:hover, .shortcut-record:focus { border-color: rgba(10,132,255,0.6); box-shadow: 0 0 0 3px rgba(10,132,255,0.1); }
+  .shortcut-record.recording { border-color: #0a84ff; color: #0a84ff; background: rgba(10,132,255,0.06); }
+  .shortcut-action {
+    flex: none; min-height: 36px; padding: 0 11px; border: 1px solid rgba(0,0,0,0.13); border-radius: 9px;
+    background: rgba(0,0,0,0.035); color: #1d1d1f; font-size: 11px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .shortcut-action.primary { border-color: #0a84ff; background: #0a84ff; color: #fff; }
+  .shortcut-action:hover { filter: brightness(0.97); }
+  .shortcut-action:disabled { opacity: 0.5; cursor: default; }
+  .shortcut-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 17px; }
+  .shortcut-status { min-width: 0; flex: 1; font-size: 10px; line-height: 1.45; color: rgba(29,29,31,0.52); }
+  .shortcut-status.success { color: #0a8f6a; }
+  .shortcut-status.error { color: #c52b3a; }
+  .shortcut-reset { border: 0; background: transparent; color: #0a84ff; font-size: 10px; font-family: inherit; cursor: pointer; white-space: nowrap; }
   .foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: rgba(29,29,31,0.45); }
 </style>
 </head>
@@ -88,6 +108,23 @@
           <div class="opt-sub">开启后组件挂载桌面层，Win+D / 三指下滑不隐藏（暂不可拖动/右键）</div>
         </div>
         <div class="toggle" id="tgPin"><div class="knob"></div></div>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="group">
+      <div class="section-title">鼠标穿透安全</div>
+      <div>
+        <div class="opt-label">解除全部组件穿透</div>
+        <div class="opt-sub">点击下方按键后直接按新组合键；快捷键在组件无法点击时仍可使用</div>
+      </div>
+      <div class="shortcut-row">
+        <button class="shortcut-record" id="shortcutRecorder" type="button" title="点击后录制快捷键">Ctrl + Alt + Shift + W</button>
+        <button class="shortcut-action primary" id="btnSaveShortcut" type="button">保存</button>
+      </div>
+      <div class="shortcut-meta">
+        <span class="shortcut-status" id="shortcutStatus">正在读取快捷键…</span>
+        <button class="shortcut-reset" id="btnResetShortcut" type="button">恢复默认</button>
       </div>
     </div>
 

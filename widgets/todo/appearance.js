@@ -1,5 +1,4 @@
-// 外观设置窗口 —— 渲染进程
-// 背景透明度（滑动时窗口透明看组件外观）+ 背景色（渐变/纯色/调色盘）+ 字体色调色盘 + 数字字号
+// 外观设置窗口 —— 渲染进程（背景透明度统一在组件右键菜单直接调节）
 const { ipcRenderer } = require('electron');
 const instId = new URLSearchParams(location.search).get('inst') || 'todo-1';
 
@@ -34,39 +33,6 @@ function refreshSelection() {
   document.querySelectorAll('#fontSwatches .swatch').forEach((s) => s.classList.toggle('sel', s.style.background === appearance.fontColor));
   document.querySelectorAll('.size').forEach((b) => b.classList.toggle('sel', parseInt(b.dataset.size, 10) === appearance.fontSize));
 }
-
-// 背景透明度滑块（滑动时窗口透明，实时看组件）
-const opTrack = document.getElementById('opTrack');
-const opFill = document.getElementById('opFill');
-const opThumb = document.getElementById('opThumb');
-const opVal = document.getElementById('opVal');
-function paintOpacity() {
-  const pct = Math.round(appearance.bgOpacity);
-  opFill.style.width = pct + '%';
-  opThumb.style.left = pct + '%';
-  opVal.textContent = pct + '%';
-}
-function setOpacityFromX(clientX) {
-  const r = opTrack.getBoundingClientRect();
-  if (!r.width) return;
-  const v = Math.max(0, Math.min(100, Math.round((clientX - r.left) / r.width * 100)));
-  appearance.bgOpacity = v;
-  ipcRenderer.send('todo:appearance:' + instId, { bgOpacity: v });
-  paintOpacity();
-}
-let sliding = false;
-opTrack.addEventListener('mousedown', (e) => {
-  e.preventDefault(); e.stopPropagation();
-  sliding = true;
-  ipcRenderer.send('todo:appearance-slide-start:' + instId);   // 窗口透明
-  setOpacityFromX(e.clientX);
-});
-document.addEventListener('mousemove', (e) => { if (sliding) setOpacityFromX(e.clientX); });
-document.addEventListener('mouseup', () => {
-  if (!sliding) return;
-  sliding = false;
-  ipcRenderer.send('todo:appearance-slide-end:' + instId);     // 窗口恢复
-});
 
 // 背景色
 buildSwatches(document.getElementById('bgSwatches'), BG_GRADIENTS.map((g) => g.v), appearance.bg, (v) => {
@@ -125,6 +91,5 @@ document.getElementById('doneBtn').addEventListener('click', () => ipcRenderer.s
     ipcRenderer.send('todo:appearance:' + instId, { fontColor: v });
     refreshSelection();
   });
-  paintOpacity();
   refreshSelection();
 })();

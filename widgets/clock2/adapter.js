@@ -59,37 +59,17 @@ function setup({ instance, win, save }) {
   ipcMain.on('clock2:bg-opacity:' + instId, (_e, v) => {
     if (typeof v === 'number') {
       cfg.bgOpacity = Math.max(0, Math.min(1, v));
-      cfg.customized = true;
       persist();
       pushStyle();
     }
   });
-
-  win.webContents.on('context-menu', () => {
-    const menu = Menu.buildFromTemplate([
-      { label: '24 小时制', type: 'radio', checked: !cfg.hour12, click: () => { cfg.hour12 = false; persist(); pushCfg(); } },
-      { label: '12 小时制', type: 'radio', checked: cfg.hour12, click: () => { cfg.hour12 = true; persist(); pushCfg(); } },
-      { type: 'separator' },
-      { label: '浅色模式', type: 'radio', checked: cfg.theme === 'light', click: () => { cfg.theme = 'light'; persist(); pushCfg(); } },
-      { label: '深色模式', type: 'radio', checked: cfg.theme === 'dark', click: () => { cfg.theme = 'dark'; persist(); pushCfg(); } },
-      { label: '跟随系统', type: 'radio', checked: cfg.theme === 'auto', click: () => { cfg.theme = 'auto'; persist(); pushCfg(); } },
-      { type: 'separator' },
-      { label: '显示秒钟', type: 'checkbox', checked: !!cfg.showSeconds, click: (it) => { cfg.showSeconds = it.checked; persist(); pushCfg(); } },
-      { type: 'separator' },
-      { label: '外观调节…', click: openAppearance },
-      { label: '背景透明度…', click: () => win.webContents.send('show-opacity-panel:' + instId) },
-      { type: 'separator' },
-      { label: cfg.locked ? '解锁位置' : '锁定位置', click: () => { cfg.locked = !cfg.locked; persist(); pushCfg(); } },
-      {
-        label: '退出组件',
-        click: () => {
-          global.__cfg.instances = global.__cfg.instances.filter((i) => i.id !== instId);
-          save();
-          win.close();
-        },
-      },
-    ]);
-    menu.popup({ window: win });
+  ipcMain.on('clock2:options:' + instId, (_e, options) => {
+    if (!options || typeof options !== 'object') return;
+    if (typeof options.hour12 === 'boolean') cfg.hour12 = options.hour12;
+    if (typeof options.showSeconds === 'boolean') cfg.showSeconds = options.showSeconds;
+    if (options.theme === 'auto' || options.theme === 'light' || options.theme === 'dark') cfg.theme = options.theme;
+    persist();
+    pushCfg();
   });
 
   win.on('closed', () => {

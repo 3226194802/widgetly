@@ -105,6 +105,8 @@ function setup({ instance, win, save }) {
     const cfg = instance.config || {};
     return { bgColor: cfg.bgColor || null, textColor: cfg.textColor || null, accentColor: cfg.accentColor || null };
   });
+  // 统一右键菜单直接打开外观页，不再绕回旧的二级菜单。
+  ipcMain.on('cal:appearance-open:' + instId, openAppearance);
   ipcMain.on('cal:appearance:' + instId, (_e, c) => {
     if (c && win && !win.isDestroyed()) win.webContents.send('cal:appearance-color:' + instId, c);
   });

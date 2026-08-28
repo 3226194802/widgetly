@@ -10,24 +10,14 @@ const PRESETS = {
   rose: { bgColor: '#fff2f6', textColor: '#4f2735', accentColor: '#ef6d86', secondaryColor: '#9b78e8' },
 };
 let current = { ...PRESETS.sky, bgOpacity: .2 };
-function rgba(hex, alpha) {
-  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
-  if (!m) return `rgba(247,251,255,${alpha})`;
-  const n = parseInt(m[1], 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
-}
 function paint() {
   ids.forEach((id) => { document.getElementById(id).value = current[id]; });
-  const transparency = Math.round((1 - (typeof current.bgOpacity === 'number' ? current.bgOpacity : .2)) * 100);
-  document.getElementById('transparency').value = transparency;
-  document.getElementById('transparencyValue').textContent = transparency + '%';
   const preview = document.getElementById('preview');
   preview.style.setProperty('--bg', current.bgColor); preview.style.setProperty('--text', current.textColor); preview.style.setProperty('--accent', current.accentColor);
-  preview.style.background = rgba(current.bgColor, typeof current.bgOpacity === 'number' ? current.bgOpacity : .2);
+  preview.style.background = current.bgColor;
 }
 function save() { ipcRenderer.send('countdown:appearance-save:' + instId, current); }
 ids.forEach((id) => document.getElementById(id).addEventListener('input', (e) => { current[id] = e.target.value; paint(); save(); }));
-document.getElementById('transparency').addEventListener('input', (e) => { current.bgOpacity = 1 - Number(e.target.value) / 100; paint(); save(); });
 document.querySelectorAll('.preset').forEach((button) => button.addEventListener('click', () => { current = { ...current, ...PRESETS[button.dataset.preset] }; paint(); save(); }));
 document.getElementById('resetBtn').addEventListener('click', () => ipcRenderer.send('countdown:appearance-reset:' + instId));
 document.getElementById('doneBtn').addEventListener('click', () => ipcRenderer.send('countdown:appearance-close:' + instId));

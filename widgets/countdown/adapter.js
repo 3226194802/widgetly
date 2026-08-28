@@ -14,7 +14,8 @@ const DEFAULT_STYLE = {
   pinned: false,
   locked: false,
 };
-const MIN_SIZE = { w: 190, h: 198 };
+// 这两个组件使用容器尺寸驱动排版，允许继续缩小而不裁切内容。
+const MIN_SIZE = { w: 160, h: 166 };
 const MAX_SIZE = { w: 520, h: 540 };
 
 function clamp(v, min, max, fallback) {
@@ -276,8 +277,17 @@ function setup({ instance, win, save }) {
     pushState();
     if (data.done) persist();
   });
+  on('countdown:background-opacity:' + instId, (_e, alpha) => {
+    style.bgOpacity = clamp(alpha, 0, 1, style.bgOpacity);
+    persist();
+    pushState();
+  });
   on('countdown:menu-close:' + instId, closeMenu);
   on('countdown:settings-open:' + instId, openSettings);
+  on('countdown:choose:' + instId, (_e, data) => {
+    if (!data) return;
+    chooseTarget(Number(data.slot), String(data.targetId || ''));
+  });
   on('countdown:settings-close:' + instId, () => { if (settingsWin && !settingsWin.isDestroyed()) settingsWin.close(); });
   on('countdown:appearance-open:' + instId, openAppearance);
   on('countdown:appearance-save:' + instId, (_e, raw) => {

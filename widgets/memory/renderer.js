@@ -8,7 +8,7 @@ const ctx = canvas.getContext('2d');
 const samples = [];        // 滚动内存使用率 %（0-100）
 const MAX_SAMPLES = 36;    // ~36 秒窗口
 
-let curveColor = '#ffd24a', barColor = '#a07fff', fontColor = '#f2eee6';
+let curveColor = '#ffd24a', barColor = '#a07fff', fontColor = '#f2eee6', backgroundAlpha = 0.62;
 
 // ---------- 格式化 ----------
 function fmtRamGB(bytes) { return (bytes / 1024 ** 3).toFixed(1); }
@@ -80,7 +80,7 @@ function drawEcg() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
   // 浅色背景矩形（定义曲线纵向范围，若隐若现）
-  ctx.fillStyle = 'rgba(255,255,255,0.035)';
+  ctx.fillStyle = `rgba(255,255,255,${(0.035 * backgroundAlpha).toFixed(4)})`;
   ctx.fillRect(0, 0, w, h);
   if (samples.length < 2) return;
   const n = samples.length;
@@ -123,10 +123,19 @@ function applyAppearance(a) {
   if (a.fontColor) { fontColor = a.fontColor; root.setProperty('--fontc', a.fontColor); }
   if (a.bgColor) root.setProperty('--bgc', a.bgColor);
   if (a.bgMode) document.body.dataset.bg = a.bgMode;
+  if (Number.isFinite(Number(a.bgOpacity))) backgroundAlpha = Math.max(0, Math.min(1, Number(a.bgOpacity)));
+  root.setProperty('--widgetly-bg-alpha', String(backgroundAlpha));
+  document.body.dataset.backgroundClear = backgroundAlpha <= 0.001 ? 'true' : 'false';
   drawEcg();
 }
 ipcRenderer.on('memory:appearance:' + instId, (_e, a) => applyAppearance(a));
 ipcRenderer.invoke('memory:appearance-init:' + instId).then(applyAppearance);
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  applyAppearance({ bgOpacity: Number.isFinite(alpha) ? alpha : 1 - percent / 100 });
+});
 
 // ---------- 拖动：空白拖（锁定禁拖） ----------
 let locked = false;
@@ -144,7 +153,7 @@ window.addEventListener('blur', () => ipcRenderer.send('drag-end'));
 document.addEventListener('contextmenu', (e) => {
   ipcRenderer.send('activate');
   e.preventDefault();
-  ipcRenderer.send('memory:menu:' + instId);
+  ipcRenderer.send('widgetly-common-menu:' + instId);
 });
 
 window.addEventListener('resize', () => drawEcg());

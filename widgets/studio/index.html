@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Widgetly 桌面组件</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="widget-card" id="card">
+    <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+    <section class="content" id="content"></section>
+    <section class="editor" id="editor" hidden>
+      <div class="editor-shell">
+        <header><div><small>WIDGETLY</small><strong id="editorTitle">组件设置</strong></div><button id="editorClose" type="button">×</button></header>
+        <div class="editor-body" id="editorBody"></div>
+        <footer><button class="soft" id="editorCancel" type="button">取消</button><button class="primary" id="editorSave" type="button">保存更改</button></footer>
+      </div>
+    </section>
+    <div class="toast" id="toast" hidden></div>
+  </main>
+  <script src="renderer.js"></script>
+</body>
+</html>

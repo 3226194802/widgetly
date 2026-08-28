@@ -26,6 +26,139 @@ sel.addEventListener('change', () => ipcRenderer.send('autostartMethod:save', se
   try { sel.value = await ipcRenderer.invoke('autostartMethod:get'); } catch (_) {}
 })();
 
+// ---------- 全局解除鼠标穿透快捷键 ----------
+const shortcutRecorder = document.getElementById('shortcutRecorder');
+const shortcutStatus = document.getElementById('shortcutStatus');
+const btnSaveShortcut = document.getElementById('btnSaveShortcut');
+const btnResetShortcut = document.getElementById('btnResetShortcut');
+let pendingShortcut = 'CommandOrControl+Alt+Shift+W';
+let recordingShortcut = false;
+
+function displayShortcut(shortcut) {
+  return String(shortcut || '')
+    .replace(/CommandOrControl/gi, 'Ctrl')
+    .replace(/Control/gi, 'Ctrl')
+    .replace(/Command/gi, 'Cmd')
+    .replace(/Super/gi, 'Win')
+    .split('+')
+    .join(' + ');
+}
+
+function paintShortcutStatus(message, type = '') {
+  shortcutStatus.textContent = message || '';
+  shortcutStatus.classList.toggle('success', type === 'success');
+  shortcutStatus.classList.toggle('error', type === 'error');
+}
+
+function stopShortcutRecording({ restoreText = true } = {}) {
+  recordingShortcut = false;
+  shortcutRecorder.classList.remove('recording');
+  if (restoreText) shortcutRecorder.textContent = displayShortcut(pendingShortcut);
+}
+
+function acceleratorKey(event) {
+  const code = String(event.code || '');
+  if (/^Key[A-Z]$/.test(code)) return code.slice(3);
+  if (/^Digit[0-9]$/.test(code)) return code.slice(5);
+  if (/^F(?:[1-9]|1\d|2[0-4])$/.test(code)) return code;
+  const named = {
+    Space: 'Space', Tab: 'Tab', Enter: 'Enter', Backspace: 'Backspace', Delete: 'Delete', Insert: 'Insert',
+    Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown',
+    ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
+  };
+  return named[event.key] || '';
+}
+
+shortcutRecorder.addEventListener('click', () => {
+  recordingShortcut = true;
+  shortcutRecorder.classList.add('recording');
+  shortcutRecorder.textContent = '请按新组合键…';
+  paintShortcutStatus('录制中：按 Esc 可取消；建议使用两个以上修饰键', '');
+  shortcutRecorder.focus();
+});
+
+window.addEventListener('keydown', (event) => {
+  if (!recordingShortcut) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (event.key === 'Escape') {
+    stopShortcutRecording();
+    paintShortcutStatus('已取消录制，原快捷键未改变');
+    return;
+  }
+  const key = acceleratorKey(event);
+  if (!key) return;
+  const modifiers = [];
+  if (event.ctrlKey) modifiers.push('CommandOrControl');
+  if (event.altKey) modifiers.push('Alt');
+  if (event.shiftKey) modifiers.push('Shift');
+  if (event.metaKey) modifiers.push('Super');
+  if (!modifiers.length) {
+    paintShortcutStatus('请至少同时按住一个 Ctrl、Alt、Shift 或 Win 键', 'error');
+    return;
+  }
+  pendingShortcut = [...modifiers, key].join('+');
+  stopShortcutRecording();
+  paintShortcutStatus('已录制，点击“保存”后才会生效');
+}, true);
+
+window.addEventListener('blur', () => {
+  if (!recordingShortcut) return;
+  stopShortcutRecording();
+  paintShortcutStatus('窗口失去焦点，已取消本次录制');
+});
+
+async function applyShortcut(channel) {
+  stopShortcutRecording();
+  btnSaveShortcut.disabled = true;
+  btnResetShortcut.disabled = true;
+  paintShortcutStatus('正在验证快捷键是否可用…');
+  try {
+    const result = await ipcRenderer.invoke(channel, pendingShortcut);
+    pendingShortcut = (result && result.configuredShortcut) || pendingShortcut;
+    shortcutRecorder.textContent = displayShortcut(pendingShortcut);
+    if (result && result.ok) {
+      paintShortcutStatus(result.message || '快捷键已保存并生效', 'success');
+    } else {
+      const fallback = result && result.activeShortcut ? ` 当前仍可用：${displayShortcut(result.activeShortcut)}` : '';
+      paintShortcutStatus(((result && result.message) || '快捷键保存失败') + fallback, 'error');
+    }
+  } catch (_) {
+    paintShortcutStatus('保存失败，请稍后重试；原快捷键不会被替换', 'error');
+  } finally {
+    btnSaveShortcut.disabled = false;
+    btnResetShortcut.disabled = false;
+  }
+}
+
+btnSaveShortcut.addEventListener('click', () => applyShortcut('clickThroughShortcut:save'));
+btnResetShortcut.addEventListener('click', async () => {
+  try {
+    const state = await ipcRenderer.invoke('clickThroughShortcut:get');
+    pendingShortcut = (state && state.defaultShortcut) || 'CommandOrControl+Alt+Shift+W';
+  } catch (_) {
+    pendingShortcut = 'CommandOrControl+Alt+Shift+W';
+  }
+  shortcutRecorder.textContent = displayShortcut(pendingShortcut);
+  applyShortcut('clickThroughShortcut:reset');
+});
+
+(async () => {
+  try {
+    const state = await ipcRenderer.invoke('clickThroughShortcut:get');
+    pendingShortcut = (state && state.configuredShortcut) || pendingShortcut;
+    shortcutRecorder.textContent = displayShortcut(pendingShortcut);
+    if (state && state.registered) {
+      paintShortcutStatus(`已生效：${displayShortcut(state.activeShortcut)}`, 'success');
+    } else {
+      paintShortcutStatus((state && state.message) || '当前快捷键未注册，请重新保存或恢复默认', 'error');
+    }
+  } catch (_) {
+    shortcutRecorder.textContent = displayShortcut(pendingShortcut);
+    paintShortcutStatus('读取快捷键失败，请重新打开设置', 'error');
+  }
+})();
+
 document.getElementById('closeBtn').addEventListener('click', () => ipcRenderer.send('settings-close'));
 
 // 捐助窗口

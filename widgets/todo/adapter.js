@@ -332,6 +332,7 @@ function setup({ instance, win, save }) {
   ipcMain.on('todo:appearance:' + instId, (_e, a) => { if (a) setAppearance(a); });
   ipcMain.on('todo:size:' + instId, (_e, s) => setSize(s));
   ipcMain.on('todo:settings-open:' + instId, openSettings);
+  ipcMain.on('todo:apply-day-open:' + instId, openApplyDayWindow);
   ipcMain.on('todo:appearance-open:' + instId, openAppearance);
   ipcMain.on('todo:apply-open:' + instId, (_e, index) => openApplyWindow(index));
   ipcMain.on('todo:quit:' + instId, quitWidget);

@@ -275,6 +275,18 @@ function setup({ instance, win, save }) {
   ipcMain.on('pomodoro:quit:' + instId, quitWidget);
   ipcMain.on('pomodoro:add-open:' + instId, openAdd);
   ipcMain.on('pomodoro:settings-open:' + instId, openSettings);
+  ipcMain.on('pomodoro:quick:' + instId, (_e, action) => {
+    if (action === 'toggle') {
+      if (state.phase === 'idle') {
+        const task = tasks.find((item) => item.id === selectedTaskId) || tasks.find((item) => !item.done);
+        if (task) start(task.id);
+      } else if (state.running) pause();
+      else resume();
+    } else if (action === 'reset') reset();
+    else if (action === 'skip') skipBreak();
+    else if (action === 'add') openAdd();
+    else if (action === 'delete') deleteSelected();
+  });
   ipcMain.on('save-bg-opacity:' + instId, (_e, v) => {
     if (typeof v === 'number' && v >= 0 && v <= 1) {
       bgOpacity = v;
@@ -286,7 +298,6 @@ function setup({ instance, win, save }) {
     if (win && !win.isDestroyed()) win.webContents.send('show-opacity-panel:' + instId);
   });
 
-  win.webContents.on('context-menu', openMenu);
   win.webContents.on('did-finish-load', () => {
     ensureTicker();
     push();

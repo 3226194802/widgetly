@@ -188,14 +188,14 @@ html, body {
 .trend-total b { color: var(--accent); font-weight: 700; font-family: var(--num-font); font-variant-numeric: tabular-nums; }
 #chart {
   margin-top: 6px;
-  height: 122px;
+  height: 91px;
   display: flex; align-items: stretch; justify-content: space-between;
   gap: 8px;
-  padding: 0 2px;
+  padding: 0 2px 5px;
 }
 .ch-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
 .ch-val { font-size: 8.5px; color: var(--text-3); font-family: var(--num-font); font-variant-numeric: tabular-nums; margin-bottom: 3px; white-space: nowrap; }
-.ch-bar-wrap { width: 100%; height: 66px; display: flex; align-items: flex-end; justify-content: center; }
+.ch-bar-wrap { width: 100%; height: 42px; display: flex; align-items: flex-end; justify-content: center; }
 .ch-bar {
   width: 56%; min-height: 3px;
   border-radius: 4px;
@@ -209,7 +209,7 @@ html, body {
 
 /* ---------- 底部 ---------- */
 #footer {
-  margin-top: auto; padding-top: 9px;
+  margin-top: 5px; padding-top: 9px;
   display: flex; justify-content: space-between; align-items: center;
   border-top: 1px solid rgba(255, 236, 214, 0.08);
   font-size: 9.5px; color: var(--text-3);
@@ -218,57 +218,6 @@ html, body {
 #recent { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 210px; }
 #recent b { color: var(--text-2); font-weight: 600; }
 #refresh { font-variant-numeric: tabular-nums; flex: none; }
-
-/* ---------- 背景透明度弹出面板 ---------- */
-#opPanel {
-  position: absolute;
-  left: 16px; right: 16px; bottom: 12px;
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: rgba(45, 35, 28, 0.94);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 240, 220, 0.14);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 10;
-}
-#opPanel[hidden] { display: none; }
-.op-label { font-size: 12px; font-weight: 600; color: var(--text-1); flex: none; }
-.op-controls { flex: 1; display: flex; align-items: center; gap: 8px; }
-.op-val {
-  width: 40px; flex: none; text-align: right;
-  font-size: 12px; font-weight: 600; color: var(--accent);
-  font-variant-numeric: tabular-nums;
-}
-.op-slider {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  height: 14px;
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.10);
-  cursor: pointer;
-}
-.op-fill {
-  position: absolute; left: 0; top: 0; bottom: 0;
-  width: 35%;
-  border-radius: 7px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-b));
-}
-.op-thumb {
-  position: absolute; top: 50%; left: 35%;
-  width: 16px; height: 16px;
-  margin: -8px 0 0 -8px;
-  border-radius: 50%;
-  background: #f6eddc;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(245, 201, 92, 0.14);
-  transition: box-shadow 0.15s ease;
-}
-.op-slider:active .op-thumb {
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45), 0 0 0 7px rgba(245, 201, 92, 0.18);
-}
 
 /* ---------- 错误横幅 ---------- */
 #errBanner {

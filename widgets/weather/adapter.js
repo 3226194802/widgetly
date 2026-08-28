@@ -162,7 +162,6 @@ function setup({ instance, win, save }) {
   ipcMain.on('weather:bg-opacity:' + instId, (_e, v) => {
     if (typeof v === 'number') {
       bgOpacity = Math.max(0, Math.min(1, v));
-      customized = true;
       persist();
       pushStyle();
     }
@@ -187,8 +186,6 @@ function setup({ instance, win, save }) {
       ]).popup({ window: win });
     } catch (_) {}
   }
-  win.webContents.on('context-menu', openMenu);
-
   // ---------- 轮询（30 分钟自动刷新） ----------
   win.webContents.on('did-finish-load', () => {
     win.webContents.send('weather:lock:' + instId, locked);

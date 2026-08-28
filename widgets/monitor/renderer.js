@@ -258,23 +258,27 @@ $('btnPlatform').addEventListener('click', () => ipcRenderer.send('monitor:platf
 $('btnRefresh').addEventListener('mousedown', stopDrag);
 $('btnRefresh').addEventListener('click', () => ipcRenderer.send('monitor:refresh:' + instId));
 $('btnSettings').addEventListener('mousedown', stopDrag);
-$('btnSettings').addEventListener('click', () => ipcRenderer.send('monitor:menu:' + instId));
+$('btnSettings').addEventListener('click', () => ipcRenderer.send('widgetly-common-menu:' + instId));
 $('btnClose').addEventListener('mousedown', stopDrag);
 $('btnClose').addEventListener('click', () => ipcRenderer.send('monitor:quit:' + instId));
 
-// ---------- 拖动：整卡左键拖动（锁定时禁拖，按钮/滑杆面板内不拖） ----------
+// ---------- 拖动：整卡左键拖动（锁定时禁拖，按钮内不拖） ----------
 document.addEventListener('mousedown', (e) => {
   ipcRenderer.send('activate');
   if (e.button !== 0) return;
-  if (e.target.closest && e.target.closest('#opPanel')) return;
   if (e.target.closest && e.target.closest('.tb-btn')) return;
   if (!locked) ipcRenderer.send('drag-start');
 });
 window.addEventListener('mouseup', () => ipcRenderer.send('drag-end'));
 window.addEventListener('blur', () => ipcRenderer.send('drag-end'));
 
-// 右键前先激活，保证原生 context-menu 触发
-document.addEventListener('contextmenu', () => ipcRenderer.send('activate'));
+// 右键只进入统一独立菜单，不再绕回旧原生菜单。
+document.addEventListener('contextmenu', (event) => {
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  ipcRenderer.send('activate');
+  ipcRenderer.send('widgetly-common-menu:' + instId);
+}, true);
 
 // ---------- 毛玻璃背景（菜单开关；实时 backdrop-filter 模糊 + 暖棕罩，与文件夹组件同款） ----------
 const veilEl = document.getElementById('veil');
@@ -282,56 +286,28 @@ let glass = false;
 ipcRenderer.on('glass:' + instId, (_e, on) => {
   glass = !!on;
   card.classList.toggle('glass-on', glass);
-  paintSlider(veilVal);   // 同步滑块：玻璃模式控制罩层，普通模式控制卡片底色
+  applyBackgroundTransparency(veilVal);
 });
 
-// ---------- 背景透明度（自绘滑块：点击 + 拖动） ----------
+// ---------- 背景透明度：仅由统一菜单推送 ----------
 const card = document.getElementById('card');
-const panel = $('opPanel');
-const slider = $('opSlider');
-const opFill = $('opFill');
-const opThumb = $('opThumb');
-const opVal = $('opVal');
-let hideTimer = null;
 let veilVal = 22;   // 透明度百分比（0=不透明，100=全透明）
 
-function paintSlider(v) {
-  veilVal = v;
-  opFill.style.width = v + '%';
-  opThumb.style.left = v + '%';
-  opVal.textContent = v + '%';
-  if (glass) veilEl.style.opacity = (1 - v / 100).toFixed(3);
-  else card.style.setProperty('--bg-a', (1 - v / 100).toFixed(3));
+function applyBackgroundTransparency(v) {
+  veilVal = Math.max(0, Math.min(100, Number(v) || 0));
+  if (glass) veilEl.style.opacity = (1 - veilVal / 100).toFixed(3);
+  else card.style.setProperty('--bg-a', (1 - veilVal / 100).toFixed(3));
+  const clear = veilVal >= 100;
+  card.style.backdropFilter = clear ? 'none' : '';
+  card.style.webkitBackdropFilter = clear ? 'none' : '';
 }
-function setFromX(clientX) {
-  const r = slider.getBoundingClientRect();
-  if (!r.width) return;
-  const v = Math.max(0, Math.min(100, Math.round((clientX - r.left) / r.width * 100)));
-  paintSlider(v);
-}
-function showPanel() { panel.hidden = false; scheduleHide(); }   // 打开即计时收起
-function scheduleHide() { if (hideTimer) clearTimeout(hideTimer); hideTimer = setTimeout(() => { panel.hidden = true; }, 2200); }
-
-let opDragging = false;
-slider.addEventListener('mousedown', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  opDragging = true;
-  if (hideTimer) clearTimeout(hideTimer);
-  setFromX(e.clientX);
-});
-document.addEventListener('mousemove', (e) => { if (opDragging) setFromX(e.clientX); });
-document.addEventListener('mouseup', () => {
-  if (!opDragging) return;
-  opDragging = false;
-  ipcRenderer.send('save-bg-opacity:' + instId, (100 - veilVal) / 100);
-  scheduleHide();
-});
-ipcRenderer.on('show-opacity-panel:' + instId, () => showPanel());
 ipcRenderer.on('bg-opacity:' + instId, (_e, bgAlpha) => {
   const v = Math.round((1 - bgAlpha) * 100);
-  paintSlider(v);
+  applyBackgroundTransparency(v);
 });
-document.addEventListener('mousedown', (e) => {
-  if (!panel.hidden && !panel.contains(e.target)) panel.hidden = true;
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  applyBackgroundTransparency(Number.isFinite(percent) ? percent : (1 - alpha) * 100);
 });

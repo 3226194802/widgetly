@@ -106,6 +106,14 @@ ipcRenderer.on('gallery:config:' + instId, (_e, cfg) => {
 });
 ipcRenderer.on('gallery:images:' + instId, (_e, list) => applyList(list));
 ipcRenderer.on('lock:' + instId, (_e, on) => { locked = !!on; });
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  const safeAlpha = Math.max(0, Math.min(1, Number.isFinite(alpha) ? alpha : 1 - percent / 100));
+  document.documentElement.style.setProperty('--widgetly-bg-alpha', String(safeAlpha));
+  document.body.dataset.backgroundClear = safeAlpha <= 0.001 ? 'true' : 'false';
+});
 
 // ---------- 拖动（锁定禁拖） ----------
 document.addEventListener('mousedown', (e) => {

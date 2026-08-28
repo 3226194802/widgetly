@@ -17,6 +17,7 @@ html, body {
   --bar: #a07fff;      /* 进度条色（外观可调） */
   --fontc: #f2eee6;    /* 字体色（外观可调） */
   --bgc: #191722;      /* 背景基色（外观可调） */
+  --widgetly-bg-alpha: .62;
   --fontc-dim: color-mix(in srgb, var(--fontc) 62%, transparent);
   --fontc-faint: color-mix(in srgb, var(--fontc) 40%, transparent);
   --line: color-mix(in srgb, var(--fontc) 16%, transparent);
@@ -37,7 +38,7 @@ html, body {
 .veil {
   position: absolute; inset: 0; z-index: 0;
   background: var(--bgc);
-  opacity: 0;
+  opacity: var(--widgetly-bg-alpha);
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
@@ -45,14 +46,16 @@ html, body {
 
 /* 背景模式 */
 body[data-bg="transparent"] #card { backdrop-filter: none; -webkit-backdrop-filter: none; }
-body[data-bg="transparent"] .veil { opacity: 0; }
 body[data-bg="frosted"] #card {
   -webkit-backdrop-filter: blur(8px);   /* 更"毛"的实时模糊 */
   backdrop-filter: blur(8px);
 }
-body[data-bg="frosted"] .veil { opacity: 0.62; }
 body[data-bg="solid"] #card { backdrop-filter: none; -webkit-backdrop-filter: none; }
-body[data-bg="solid"] .veil { opacity: 1; }
+body[data-background-clear="true"] #card {
+  border-color: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 
 /* ---------- 顶部：内存 + 若隐若现的细横线 ---------- */
 #titlebar {

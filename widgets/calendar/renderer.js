@@ -20,15 +20,21 @@ let todayKey = '';
 
 function applyAppearance() {
   const root = document.documentElement;
+  const alpha = Math.max(0, Math.min(1, (100 - cfg.veilOpacity) / 100));
   root.style.setProperty('--bg', cfg.bgColor);
   root.style.setProperty('--text', cfg.textColor);
   root.style.setProperty('--accent', cfg.accentColor);
   root.style.setProperty('--accent-soft', hexA(cfg.accentColor, 0.8));   // 上层 80% 透明度灰调层（层次感）
   root.style.setProperty('--accent-glow', hexA(cfg.accentColor, 0.35));  // 底层大柔光
   root.style.setProperty('--accent-dim', hexA(cfg.accentColor, 0.16));
-  root.style.setProperty('--veil-opacity', String((100 - cfg.veilOpacity) / 100));
+  root.style.setProperty('--veil-opacity', String(alpha));
   root.style.setProperty('--text-dim', hexA(cfg.textColor, 0.55));
   root.style.setProperty('--text-faint', hexA(cfg.textColor, 0.32));
+  const surface = document.getElementById('card');
+  if (surface) {
+    surface.style.backdropFilter = alpha === 0 ? 'none' : '';
+    surface.style.webkitBackdropFilter = alpha === 0 ? 'none' : '';
+  }
 }
 function hexA(hex, a) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
@@ -175,20 +181,6 @@ function render() {
   else if (STYLE === 'mint') renderMint();
 }
 
-// ---------- 壁纸毛玻璃 ----------
-const glass = document.getElementById('glass');
-function applyWallpaper(wp) {
-  if (!wp) return;
-  glass.style.backgroundImage = 'url(' + wp.dataUrl + ')';
-  glass.style.backgroundSize = wp.w + 'px ' + wp.h + 'px';
-  glass.style.backgroundPosition = wp.posX + 'px ' + wp.posY + 'px';
-}
-ipcRenderer.invoke('wallpaper').then(applyWallpaper);
-ipcRenderer.on('wallpaper', (_e, wp) => applyWallpaper(wp));
-ipcRenderer.on('wallpaper-pos', (_e, p) => {
-  if (p) glass.style.backgroundPosition = p.posX + 'px ' + p.posY + 'px';
-});
-
 // ---------- 拖动 ----------
 const card = document.getElementById('card');
 card.addEventListener('mousedown', (e) => {
@@ -201,13 +193,20 @@ window.addEventListener('blur', () => ipcRenderer.send('drag-end'));
 // ---------- 浮动菜单 ----------
 card.addEventListener('contextmenu', (e) => {
   e.preventDefault();
-  ipcRenderer.send('cal:menu:' + instId, { veil: cfg.veilOpacity });
+  ipcRenderer.send('widgetly-common-menu:' + instId);
 });
 ipcRenderer.on('cal:veil:' + instId, (_e, { v, save }) => {
   if (typeof v !== 'number') return;
   cfg.veilOpacity = Math.max(0, Math.min(100, Math.round(v)));
   applyAppearance();
   if (save) savePrefs();
+});
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  cfg.veilOpacity = Math.round(Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : (1 - alpha) * 100)));
+  applyAppearance();
 });
 ipcRenderer.on('cal:appearance-color:' + instId, (_e, c) => {
   if (!c) return;

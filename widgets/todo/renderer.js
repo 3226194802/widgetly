@@ -15,10 +15,14 @@ const listEl = document.getElementById('list');
 const addRow = document.getElementById('addRow');
 const titleEl = document.getElementById('title');
 const veilEl = document.getElementById('veil');
+const cardEl = document.getElementById('card');
 
 function applyAppearance() {
+  const alpha = Math.max(0, Math.min(1, 1 - appearance.bgOpacity / 100));
   veilEl.style.background = appearance.bg;
-  veilEl.style.opacity = String(Math.max(0, Math.min(1, 1 - appearance.bgOpacity / 100)));
+  veilEl.style.opacity = String(alpha);
+  cardEl.style.backdropFilter = alpha === 0 ? 'none' : '';
+  cardEl.style.webkitBackdropFilter = alpha === 0 ? 'none' : '';
   titleEl.style.color = appearance.fontColor;
   listEl.style.color = appearance.fontColor;
   listEl.style.fontSize = appearance.fontSize + 'px';
@@ -31,6 +35,8 @@ function render() {
   todos.forEach((todo, i) => {
     const row = document.createElement('div');
     row.className = 'todo-row' + (todo.done ? ' done' : '');
+    row.dataset.todoIndex = String(i);
+    row.dataset.todoDate = String(today || '');
     const color = BTN_COLORS[i % BTN_COLORS.length];
     const check = document.createElement('span');
     check.className = 'check';
@@ -86,6 +92,13 @@ ipcRenderer.on('todo:changed:' + instId, (_e, data) => {
   appearance = data.appearance || appearance;
   size = data.size || size;
   render();
+});
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  appearance.bgOpacity = Math.round(Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : (1 - alpha) * 100)));
+  applyAppearance();
 });
 
 // ---------- 拖动（双击防抖 + 输入框内不拖） ----------

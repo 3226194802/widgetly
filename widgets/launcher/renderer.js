@@ -7,7 +7,6 @@ const icon = document.getElementById('icon');
 const statusText = document.getElementById('statusText');
 const detail = document.getElementById('detail');
 const card = document.getElementById('card');
-const glass = document.getElementById('glass');
 const dot = document.getElementById('dot');
 
 let state = 'idle';
@@ -35,19 +34,11 @@ function paint() {
   else detail.textContent = '未配置安装路径';
 }
 function applyVeil() {
-  document.documentElement.style.setProperty('--veil-opacity', String((100 - veil) / 100));
+  const alpha = Math.max(0, Math.min(1, (100 - veil) / 100));
+  document.documentElement.style.setProperty('--veil-opacity', String(alpha));
+  card.style.backdropFilter = alpha === 0 ? 'none' : '';
+  card.style.webkitBackdropFilter = alpha === 0 ? 'none' : '';
 }
-
-// 壁纸
-function applyWallpaper(wp) {
-  if (!wp) return;
-  glass.style.backgroundImage = 'url(' + wp.dataUrl + ')';
-  glass.style.backgroundSize = wp.w + 'px ' + wp.h + 'px';
-  glass.style.backgroundPosition = wp.posX + 'px ' + wp.posY + 'px';
-}
-ipcRenderer.invoke('wallpaper').then(applyWallpaper);
-ipcRenderer.on('wallpaper', (_e, wp) => applyWallpaper(wp));
-ipcRenderer.on('wallpaper-pos', (_e, p) => { if (p) glass.style.backgroundPosition = p.posX + 'px ' + p.posY + 'px'; });
 
 // 按钮点击
 btn.addEventListener('click', () => {
@@ -64,7 +55,7 @@ window.addEventListener('mouseup', () => ipcRenderer.send('drag-end'));
 window.addEventListener('blur', () => ipcRenderer.send('drag-end'));
 card.addEventListener('contextmenu', (e) => {
   e.preventDefault();
-  ipcRenderer.send('launcher:menu:' + instId, { state, veil });
+  ipcRenderer.send('widgetly-common-menu:' + instId);
 });
 
 // 状态/尺寸/主题/透明度推送
@@ -77,6 +68,13 @@ ipcRenderer.on('launcher:veil:' + instId, (_e, d) => {
     applyVeil();
     if (d.save) ipcRenderer.send('cfg:save:' + instId, { veilOpacity: veil });
   }
+});
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  veil = Math.round(Math.max(0, Math.min(100, Number.isFinite(percent) ? percent : (1 - alpha) * 100)));
+  applyVeil();
 });
 
 (async () => {

@@ -1,6 +1,6 @@
-// 渐变数字时钟（标准/小/中号）—— 渲染进程：配置、毛玻璃壁纸、时间渲染、主题、拖动
+// 渐变数字时钟（标准/小/中号）—— 渲染进程：配置、实时透明背景、时间渲染、主题、拖动
 // 右键菜单 = 独立浮动菜单窗口（主进程管理）；透明度滑杆在菜单窗口内拖动，经主进程实时转发
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, clipboard } = require('electron');
 
 // 组件坞适配：从 URL query 获取本实例 id，配置通道按实例隔离
 const instId = new URLSearchParams(location.search).get('inst') || 'clock-1';
@@ -16,7 +16,6 @@ function evt(msg) { ipcRenderer.send('evt', msg); }
   } catch (_) {
     cfg = { width: 284, theme: 'auto', subtitle: 'iScreen', hour12: false, showSubtitle: true, veilOpacity: 60 };
   }
-  const glass = document.getElementById('glass');
   const ampmEl = document.getElementById('ampm');
   const card = document.querySelector('.card');
   let forcedTheme = null;      // null = 跟随 config.theme
@@ -106,23 +105,6 @@ function evt(msg) { ipcRenderer.send('evt', msg); }
     document.getElementById('m2').className = 'digit d-b';
   }
 
-  // ---- 毛玻璃：壁纸模糊层只铺在卡片内（卡片外透明，窗口矩形不可见）----
-  function applyWallpaper(wp) {
-    if (!wp || !cfg.glass) { glass.style.display = 'none'; return; }
-    const bg = `url(${wp.dataUrl})`;
-    const size = `${wp.w}px ${wp.h}px`;
-    const pos = `${wp.posX}px ${wp.posY}px`;
-    glass.style.backgroundImage = bg;
-    glass.style.backgroundSize = size;
-    glass.style.backgroundPosition = pos;
-  }
-  applyWallpaper(await ipcRenderer.invoke('wallpaper'));
-  ipcRenderer.on('wallpaper', (e, wp) => applyWallpaper(wp));
-  // 拖动中实时更新壁纸位置（只发坐标，轻量）
-  ipcRenderer.on('wallpaper-pos', (e, p) => {
-    if (p && cfg.glass) glass.style.backgroundPosition = `${p.posX}px ${p.posY}px`;
-  });
-
   // ---- 时间：12/24 小时制，分钟变化才更新 DOM ----
   const ids = ['h1', 'h2', 'm1', 'm2'];
   let last = '';
@@ -164,11 +146,7 @@ function evt(msg) { ipcRenderer.send('evt', msg); }
   // ---- 右键：请求浮动菜单（附带当前状态用于菜单显示）----
   card.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    ipcRenderer.send('clock:menu:' + instId, {
-      hour12: cfg.hour12,
-      theme: document.documentElement.dataset.theme,
-      veil: veilVal,
-    });
+    ipcRenderer.send('widgetly-common-menu:' + instId);
   });
 
   // ---- 浮动菜单动作执行（主进程转发）----
@@ -183,7 +161,9 @@ function evt(msg) { ipcRenderer.send('evt', msg); }
       applyTheme();
       savePrefs();
     } else if (action === 'copy') {
-      navigator.clipboard.writeText(currentTimeText || '--:--').catch(() => {});
+      // 透明桌面窗口不一定获得浏览器 Clipboard 权限；Electron 剪贴板不依赖焦点/权限，
+      // 因而从统一菜单点击后也能稳定复制屏幕上正在显示的时间。
+      clipboard.writeText(currentTimeText || '--:--');
     }
   });
 
@@ -193,6 +173,11 @@ function evt(msg) { ipcRenderer.send('evt', msg); }
     veilVal = Math.max(0, Math.min(100, Math.round(v)));
     paintVeil();
     if (save) savePrefs();
+  });
+  ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+    if (!data || !Number.isFinite(Number(data.percent))) return;
+    veilVal = Math.max(0, Math.min(100, Math.round(Number(data.percent))));
+    paintVeil();
   });
 
   // ---- 外观颜色（外观调节窗口实时推送；按字段更新，互不覆盖）----

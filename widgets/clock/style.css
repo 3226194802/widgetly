@@ -1,4 +1,4 @@
-/* 渐变数字时钟 —— 透明窗口：卡片外直接透明（窗口矩形不可见），卡片内毛玻璃 */
+/* 渐变数字时钟 —— 透明窗口：不再截取壁纸，直接透出实时桌面内容 */
 /* Open Runde（Inter 的圆润变体，OFL 可商用）：Bold(700) 本地加载，无网络依赖 */
 @font-face {
   font-family: 'Open Runde';
@@ -33,7 +33,7 @@ html, body {
   font-family: 'YouYuan', '幼圆', 'Nunito', 'Dubai', sans-serif; /* 幼圆：圆幼态，笔画柔和圆润 */
 }
 
-/* 主题变量（浅色 = 白毛玻璃，深色 = 深灰毛玻璃） */
+/* 主题变量（背景透明度由单一罩层控制） */
 :root {
   --fs: 110px; /* 数字字号，由 renderer 按窗口宽度换算 */
   --veil-bg: rgba(255,255,255,1); /* 浅色模式纯白罩（透明度 0% 时不透明背景 = 纯白） */
@@ -52,8 +52,7 @@ html[data-theme="dark"] {
   --sub-color: rgba(255,255,255,0.60);
 }
 
-/* 毛玻璃卡片：无内边距（卡片=窗口全尺寸，与快捷收纳 dock 卡片一致；透明窗口下卡片外即桌面）。
-   边缘微微内发光（inset：透明窗口上外发光会被窗口矩形边缘裁剪成方形，内发光不被裁剪） */
+/* 卡片本体不使用图片背景，透明区域始终显示当前桌面，而不是启动时截取的静态壁纸。 */
 .card {
   position: absolute; inset: 0;
   border-radius: 32px;
@@ -73,22 +72,17 @@ html[data-theme="dark"] .card {
     inset 0 0 6px rgba(255, 255, 255, 0.05);
 }
 
-/* 背景容器：玻璃模糊层 + 半透明罩统包，透明度滑杆控制整体（100=完全透明，桌面直接可见） */
+/* 背景容器本身始终透明；透明度只在 veil 上应用一次，避免透明度被平方。 */
 .bg {
   position: absolute; inset: 0; z-index: 0;
-  opacity: var(--veil-opacity);
+  opacity: 1;
 }
 
-/* 壁纸模糊层：外扩 30px（blur 外溢部分被卡片 overflow hidden 裁掉，卡片内侧边缘不再有"稀释光晕圈"）；
-   background-attachment: fixed → 背景相对窗口定位，不受元素外扩影响，与 body 壁纸层对齐 */
+/* 兼容旧 HTML 保留节点，但永远不再写入 data-image / background-image。 */
 .glass {
-  position: absolute; inset: -30px; z-index: 0;
-  border-radius: inherit;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  filter: blur(8px) brightness(1.06);
+  display: none !important;
 }
-/* 半透明罩：多层背景——右下暖黄光斑 + 左上浅白光晕 + 顶部微暗 + 白色基底（隐约透出模糊背景色彩） */
+/* 唯一背景层：透明度 100% 时 opacity=0，真实桌面动态透出；0% 时为不透明主题底色。 */
 .veil {
   position: absolute; inset: 0; z-index: 1;
   border-radius: inherit; /* 与 .card 一致，防直角边露出 */
@@ -98,13 +92,15 @@ html[data-theme="dark"] .card {
     radial-gradient(ellipse 110% 90% at 50% -10%, rgba(130,140,160,0.10) 0%, transparent 60%),
     linear-gradient(160deg, #ffffff 0%, #e8ebef 100%); /* 不透明白基底：0%透明度=纯白 */
   opacity: var(--veil-opacity);
+  -webkit-backdrop-filter: blur(8px) saturate(1.08);
+  backdrop-filter: blur(8px) saturate(1.08);
 }
 html[data-theme="dark"] .veil {
   background:
     radial-gradient(ellipse 90% 70% at 88% 96%, rgba(255,180,100,0.13) 0%, transparent 55%),
     radial-gradient(ellipse 70% 60% at 6% 4%, rgba(255,255,255,0.06) 0%, transparent 55%),
     radial-gradient(ellipse 110% 90% at 50% -10%, rgba(90,100,125,0.15) 0%, transparent 60%),
-    linear-gradient(160deg, rgba(42,46,62,0.92) 0%, rgba(26,29,40,0.82) 100%);
+    linear-gradient(160deg, #2a2e3e 0%, #1a1d28 100%);
 }
 
 .content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; } /* 上下左右居中 */

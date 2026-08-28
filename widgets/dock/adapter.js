@@ -1,7 +1,7 @@
 // 文件夹（快捷收纳）组件 —— Widgetly 主进程适配层
-// 图标提取链 + items 管理 + 8 种排列 + 右键菜单；所有 IPC 按实例 ID 隔离
+// 图标提取链 + items 管理 + 8 种排列；右键入口统一由 common 独立菜单承载。
 // 来源：F:\hermes-dock\main.js（已实测的完整链路）
-const { ipcMain, app, Menu, dialog, shell, screen } = require('electron');
+const { ipcMain, app, dialog, shell, screen } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -460,56 +460,6 @@ function setup({ instance, win, save }) {
     })();
   }
 
-  // ---------- 右键菜单（原生，与来源一致） ----------
-  function showBlankMenu() {
-    Menu.buildFromTemplate([
-      { label: '添加快捷方式…', click: addShortcuts },
-      { type: 'separator' },
-      {
-        label: '排列方式',
-        submenu: [
-          { label: '3×3 紧凑', type: 'radio', checked: layout === '3x3', click: () => setLayout('3x3') },
-          { label: '3×4 竖版', type: 'radio', checked: layout === '3x4', click: () => setLayout('3x4') },
-          { label: '4×2 矮横条', type: 'radio', checked: layout === '4x2', click: () => setLayout('4x2') },
-          { label: '4×3 横版', type: 'radio', checked: layout === '4x3', click: () => setLayout('4x3') },
-          { label: '4×4 高版', type: 'radio', checked: layout === '4x4', click: () => setLayout('4x4') },
-          { label: '4×5 长版', type: 'radio', checked: layout === '4x5', click: () => setLayout('4x5') },
-          { label: '5×4 大容量', type: 'radio', checked: layout === '5x4', click: () => setLayout('5x4') },
-          { label: '5×3 大容量紧凑', type: 'radio', checked: layout === '5x3', click: () => setLayout('5x3') },
-        ],
-      },
-      { type: 'separator' },
-      { label: '置顶显示', type: 'checkbox', checked: pinned, click: () => togglePin() },
-      { label: '锁定位置', type: 'checkbox', checked: locked, click: () => toggleLock() },
-      { type: 'separator' },
-      { label: '背景透明度…', click: () => win.webContents.send('show-opacity-panel:' + instId) },
-      { type: 'separator' },
-      { label: '退出此组件', click: quitWidget },
-    ]).popup({ window: win });
-  }
-  function showGridMenu(p) {
-    Menu.buildFromTemplate([
-      { label: '打开', click: () => shell.openPath(p) },
-      { label: '移除快捷方式', click: () => removeShortcut(p) },
-    ]).popup({ window: win });
-  }
-  function togglePin() {
-    pinned = !pinned;
-    win.setAlwaysOnTop(pinned, 'floating');
-    win.webContents.send('pin:' + instId, pinned);
-    persist();
-  }
-  function toggleLock() {
-    locked = !locked;
-    win.webContents.send('lock:' + instId, locked);
-    persist();
-  }
-  function quitWidget() {
-    global.__cfg.instances = global.__cfg.instances.filter((i) => i.id !== instId);
-    save();
-    win.close();
-  }
-
   // ---------- 初始尺寸：按当前排列校正（4x2 是 createWidgetWindow 的初始值，可能不符） ----------
   const L0 = LAYOUTS[layout];
   {
@@ -521,16 +471,24 @@ function setup({ instance, win, save }) {
   if (pinned) win.setAlwaysOnTop(true, 'floating');
 
   // ---------- IPC（按实例隔离） ----------
-  ipcMain.on('launch:' + instId, (_e, p) => shell.openPath(p));
-  ipcMain.on('add:' + instId, addShortcuts);
-  ipcMain.on('add-files:' + instId, (_e, paths) => { if (Array.isArray(paths)) addPaths(paths); });
-  ipcMain.on('save-bg-opacity:' + instId, (_e, v) => {
+  const channels = [];
+  const on = (channel, handler) => { ipcMain.on(channel, handler); channels.push([channel, handler]); };
+  on('launch:' + instId, (_e, p) => shell.openPath(p));
+  on('add:' + instId, addShortcuts);
+  on('add-files:' + instId, (_e, paths) => { if (Array.isArray(paths)) addPaths(paths); });
+  on('dock:layout:' + instId, (_e, requestedLayout) => setLayout(String(requestedLayout || '')));
+  on('dock:open-selected:' + instId, (_e, requestedPath) => {
+    const selected = items.find((item) => String(item.path).toLowerCase() === String(requestedPath || '').toLowerCase());
+    if (selected) shell.openPath(selected.path);
+  });
+  on('dock:remove-selected:' + instId, (_e, requestedPath) => {
+    const selected = items.find((item) => String(item.path).toLowerCase() === String(requestedPath || '').toLowerCase());
+    if (selected) removeShortcut(selected.path);
+  });
+  on('save-bg-opacity:' + instId, (_e, v) => {
     bgOpacity = Math.max(0, Math.min(1, v));
     persist();
   });
-  let ctxTarget = { type: 'blank' };
-  ipcMain.on('ctx-target:' + instId, (_e, t) => { ctxTarget = t || { type: 'blank' }; });
-
   // 拖放：主进程原生事件 + 渲染层 HTML5 双通道（addPaths 去重幂等）
   win.webContents.on('drag-enter', () => win.webContents.send('drag-state:' + instId, true));
   win.webContents.on('drag-leave', () => win.webContents.send('drag-state:' + instId, false));
@@ -538,15 +496,6 @@ function setup({ instance, win, save }) {
     e.preventDefault();
     win.webContents.send('drag-state:' + instId, false);
     if (Array.isArray(filePaths)) addPaths(filePaths);
-  });
-
-  // 右键菜单：图标右键=打开/移除；空白右键=全局菜单
-  win.webContents.on('context-menu', () => {
-    if (!win.isFocused()) win.focus();
-    try {
-      if (ctxTarget.type === 'grid') showGridMenu(ctxTarget.path);
-      else showBlankMenu();
-    } catch (_) {}
   });
 
   // 初始状态推送
@@ -557,6 +506,7 @@ function setup({ instance, win, save }) {
     win.webContents.send('layout:' + instId, layout, 'down');
     pushItems();
   });
+  win.on('closed', () => channels.forEach(([channel, handler]) => ipcMain.removeListener(channel, handler)));
 }
 
 module.exports = { setup, LAYOUTS };

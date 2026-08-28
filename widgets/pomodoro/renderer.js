@@ -178,36 +178,23 @@ window.addEventListener('blur', () => ipcRenderer.send('drag-end'));
 document.addEventListener('contextmenu', (e) => {
   ipcRenderer.send('activate');
   e.preventDefault();
-  ipcRenderer.send('pomodoro:menu:' + instId);
+  ipcRenderer.send('widgetly-common-menu:' + instId);
 });
 
 // ---------- 初始化 ----------
 ipcRenderer.send('activate');
-
-// 预览模式（管理器内 iframe 无主进程推送）：展示默认示例任务
-if (instId === 'preview') {
-  renderState({
-    tasks: [
-      { id: 'p1', text: '写周报', done: false, count: 2 },
-      { id: 'p2', text: '整理代码', done: false, count: 1 },
-      { id: 'p3', text: '晨间阅读', done: true, count: 0 },
-    ],
-    settings: { focusMin: 25, shortBreakMin: 5, longBreakMin: 15, longBreakEvery: 4 },
-    today: { count: 3 },
-    locked: false,
-    selectedTaskId: null,
-    bgOpacity: 0.4,
-    state: { phase: 'idle', running: false, round: 0, taskId: null, remain: 0 },
-  });
-}
 
 // ---------- 背景透明度（自绘滑块：0%=罩层全不透明纯色，100%=罩层全透明只剩实时毛玻璃） ----------
 const veilEl = document.getElementById('veil');
 let veilVal = 45;
 function applyOpacity(alpha) {
   // alpha = bgOpacity = 罩层不透明度（0=全透明，1=纯色）
-  veilVal = Math.round((1 - alpha) * 100);
-  veilEl.style.opacity = String(alpha);
+  const safeAlpha = Math.max(0, Math.min(1, Number(alpha)));
+  veilVal = Math.round((1 - safeAlpha) * 100);
+  veilEl.style.opacity = String(safeAlpha);
+  const card = document.getElementById('card');
+  card.style.backdropFilter = safeAlpha === 0 ? 'none' : '';
+  card.style.webkitBackdropFilter = safeAlpha === 0 ? 'none' : '';
   paintPanel();
 }
 const panel = $('opPanel');
@@ -238,6 +225,12 @@ function scheduleHide() {
   hideTimer = setTimeout(() => { panel.hidden = true; }, 2200);
 }
 ipcRenderer.on('show-opacity-panel:' + instId, showPanel);
+ipcRenderer.on('widgetly:background-transparency:' + instId, (_e, data) => {
+  const alpha = Number(data && data.alpha);
+  const percent = Number(data && data.percent);
+  if (!Number.isFinite(alpha) && !Number.isFinite(percent)) return;
+  applyOpacity(Number.isFinite(alpha) ? alpha : 1 - percent / 100);
+});
 let opDragging = false;
 slider.addEventListener('mousedown', (e) => {
   e.preventDefault();
@@ -256,3 +249,20 @@ document.addEventListener('mouseup', () => {
 document.addEventListener('mousedown', (e) => {
   if (!panel.hidden && !panel.contains(e.target)) panel.hidden = true;
 });
+
+// 预览模式必须等透明度控件完成初始化后再绘制，避免访问尚未创建的 DOM 引用。
+if (instId === 'preview') {
+  renderState({
+    tasks: [
+      { id: 'p1', text: '写周报', done: false, count: 2 },
+      { id: 'p2', text: '整理代码', done: false, count: 1 },
+      { id: 'p3', text: '晨间阅读', done: true, count: 0 },
+    ],
+    settings: { focusMin: 25, shortBreakMin: 5, longBreakMin: 15, longBreakEvery: 4 },
+    today: { count: 3 },
+    locked: false,
+    selectedTaskId: null,
+    bgOpacity: 0.4,
+    state: { phase: 'idle', running: false, round: 0, taskId: null, remain: 0 },
+  });
+}

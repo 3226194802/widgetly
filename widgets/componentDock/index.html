@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Widgetly 组件坞</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="dock-shell" id="dockShell" aria-label="组件坞">
+    <div class="dock-surface" id="dockSurface">
+      <div class="dock-grid" id="dockGrid"></div>
+      <div class="dock-empty" id="dockEmpty" hidden>
+        <div class="dock-empty-icon">✦</div>
+        <strong>组件坞还是空的</strong>
+        <span>右键空白处，选择“编辑组件坞”添加组件</span>
+      </div>
+      <div class="dock-pagebar" id="pageBar" hidden></div>
+    </div>
+    <div class="dock-toast" id="dockToast" hidden></div>
+  </main>
+  <script src="renderer.js"></script>
+</body>
+</html>
